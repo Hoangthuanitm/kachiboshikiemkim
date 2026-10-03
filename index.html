@@ -131,6 +131,12 @@ tr.sun td{color:var(--muted)}
 .li{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:8px 10px;border:1px solid var(--line);border-radius:8px}
 .li>div{min-width:0;overflow-wrap:anywhere}
 .li.off{opacity:.6}
+.day{border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.day.off{opacity:.55}
+.day.today{border-color:var(--accent)}
+.dayg{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:8px}
+select.asg{color:var(--muted)}
+select.asg.set{color:var(--ink);border-color:var(--accent);background:var(--accent-soft);font-weight:600}
 .orig{display:block;font-size:12.5px;color:var(--muted)}
 #toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-weight:600;font-size:14px;max-width:calc(100% - 32px);z-index:9}
 </style>
@@ -151,6 +157,7 @@ tr.sun td{color:var(--muted)}
   <section id="login"></section>
   <section id="tab-check" hidden></section>
   <section id="tab-approve" hidden></section>
+  <section id="tab-assign" hidden></section>
   <section id="tab-accounts" hidden></section>
   <section id="tab-report" hidden></section>
   <section id="tab-settings" hidden></section>
@@ -178,7 +185,7 @@ const COLLECTION = "kachiboshivnkiemkim";
    nếu project chưa bật Cloud Translation API thì app chỉ hiện bản gốc. Đặt "" để tắt hẳn. */
 const TRANSLATE_API_KEY = firebaseConfig.apiKey;
 /* Mọi dữ liệu nằm trong MỘT collection; mỗi document có trường "type" và id có tiền tố theo loại. */
-const TYPES = {checks:"check", approvals:"appr", accounts:"acc", photos:"photo", config:"config", tr:"tr"};
+const TYPES = {checks:"check", approvals:"appr", accounts:"acc", photos:"photo", config:"config", tr:"tr", assign:"assign"};
 function makeDb(){
   const col = firebase.firestore().collection(COLLECTION);
   const wrap = (d, p) => ({id:d.id.slice(p.length), exists:d.exists, data:() => d.data()});
@@ -186,10 +193,12 @@ function makeDb(){
     doc(path){ const i = path.indexOf("/"), c = path.slice(0,i), p = TYPES[c]+"_", ref = col.doc(p+path.slice(i+1));
       return { set:d => ref.set(Object.assign({type:TYPES[c]}, d)), delete:() => ref.delete(), get:() => ref.get().then(s => wrap(s,p)),
                onSnapshot:(n,e) => ref.onSnapshot(s => n(wrap(s,p)), e) }; },
-    collection(c){ const p = TYPES[c]+"_"; let q = col.where("type","==",TYPES[c]);
-      const api = { where(f,op,v){ q = q.where(f,op,v); return api; },
-        get:() => q.get().then(s => ({docs:s.docs.map(d => wrap(d,p))})),
-        onSnapshot:(n,e) => q.onSnapshot(s => n({docs:s.docs.map(d => wrap(d,p))}), e) };
+    /* "assign" lọc theo ngày (adate) nên không kèm điều kiện type, tránh phải tạo composite index */
+    collection(c){ const p = TYPES[c]+"_"; let q = c==="assign" ? col : col.where("type","==",TYPES[c]);
+      const docs = sn => sn.docs.filter(d => d.id.indexOf(p)===0).map(d => wrap(d,p));
+      const api = { where(f,op,v){ q = q.where(f,op,v); return api; }, limit(n){ q = q.limit(n); return api; },
+        get:() => q.get().then(sn => ({docs:docs(sn)})),
+        onSnapshot:(n,e) => q.onSnapshot(sn => n({docs:docs(sn)}), e) };
       return api; }
   };
 }
@@ -211,8 +220,8 @@ const ITEMS = [
 const DOW = {vi:["Chủ nhật","Thứ hai","Thứ ba","Thứ tư","Thứ năm","Thứ sáu","Thứ bảy"], ja:["日曜日","月曜日","火曜日","水曜日","木曜日","金曜日","土曜日"]};
 const DEFAULT_TIMES = {S:{from:"06:00", due:"07:30"}, C:{from:"12:00", due:"13:00"}};
 const DEFAULT_MACHINES = [{id:"m1", name:"Máy kiểm kim"}];
-const TABS = {admin:["check","approve","accounts","report","settings"], leader:["check","approve","accounts"], worker:["check"]};
-const TAB_LABEL = {check:"Kiểm máy", approve:"Duyệt", accounts:"Tài khoản", report:"Tổng hợp tháng", settings:"Cài đặt"};
+const TABS = {admin:["approve","assign","accounts","report","settings"], leader:["approve","assign","accounts"], worker:["check"]};
+const TAB_LABEL = {check:"Kiểm máy", approve:"Duyệt", assign:"Phân công", accounts:"Tài khoản", report:"Tổng hợp tháng", settings:"Cài đặt"};
 const ROLE_LABEL = {admin:"Admin", leader:"Tổ trưởng", worker:"Công nhân"};
 
 /* Japanese UI text, keyed by the Vietnamese original */
@@ -274,7 +283,14 @@ const JA = {
 "Hãy chọn ít nhất một ca và một máy để phân công.":"時間帯と機械を少なくとも１つずつ選んでください。","Đã tạo tài khoản {id}.":"アカウント {id} を作成しました。","Đã lưu tài khoản.":"アカウントを保存しました。",
 "Thiết bị này chưa có quyền quản lý tài khoản. Nhờ chủ trang chia sẻ trang ở mức Editor.":"この端末にはアカウント管理権限がありません。所有者にEditor権限での共有を依頼してください。","Chưa lưu được tài khoản. Thử lại.":"アカウントを保存できませんでした。",
 "Đã xoá tài khoản.":"アカウントを削除しました。","Chưa xoá được.":"削除できませんでした。",
-"Chưa tải được dữ liệu tháng. Thử lại.":"月次データを読み込めませんでした。","Tháng báo cáo":"対象月","Tải lại":"再読み込み","Xuất Excel":"Excel出力",
+"Chưa tải được dữ liệu tháng. Thử lại.":"月次データを読み込めませんでした。","Phân công":"担当表","Phân công theo tuần":"週間担当表","Tuần trước":"前の週","Tuần sau":"次の週",
+"Chọn người kiểm cho từng buổi. Ô để “Theo mặc định” thì áp dụng phân công cố định trong tài khoản. Khi công nhân nghỉ, chọn người thay cho đúng buổi đó.":"各時間帯の点検担当者を選びます。「既定」の欄にはアカウントの固定担当が適用されます。欠勤時は、その時間帯だけ代わりの担当者を選んでください。",
+"Chưa có tài khoản công nhân nào. Tạo ở tab Tài khoản trước.":"作業者アカウントがありません。先に「アカウント」タブで作成してください。",
+"Điền nhanh":"一括入力","Chọn công nhân":"作業者を選択","Cả tuần":"週全体","Các buổi sáng":"午前のみ","Các buổi chiều":"午後のみ","Xoá phân công tuần này":"今週の割当を消去",
+"Mặc định: {n}":"既定：{n}","(chưa có ai)":"（担当なし）","Hãy chọn công nhân trước.":"先に作業者を選んでください。","Đã lưu phân công.":"担当を保存しました。","Chưa lưu được phân công.":"担当を保存できませんでした。",
+"Phân công mặc định (khi lịch tuần không chọn người riêng)":"既定の担当（週間担当表で指定がない場合）",
+"Hôm nay bạn chưa được phân công ca kiểm nào. Hãy báo tổ trưởng nếu chưa đúng.":"本日はあなたに割り当てられた点検がありません。誤りがあれば班長に連絡してください。",
+"Tháng báo cáo":"対象月","Tải lại":"再読み込み","Xuất Excel":"Excel出力",
 "Trình xem này không cho tải file. Hãy mở trang trên trình duyệt máy tính để xuất Excel.":"この画面ではファイルを保存できません。パソコンのブラウザで開いてExcel出力してください。",
 "Lần kiểm đã ghi":"点検記録数","Trễ giờ":"遅れ","Chưa duyệt xong":"未承認","Bảng theo ngày":"日別一覧","Đang tải dữ liệu tháng…":"月次データを読み込み中…",
 "Tháng này chưa có lần kiểm nào được ghi.":"この月の点検記録はまだありません。","Thứ":"曜日","chưa duyệt":"未承認","Các lần không đạt":"不合格の記録",
@@ -316,6 +332,7 @@ const S = {
   slot:{shift: new Date().getHours()<12 ? "S" : "C", machine:"m1"},
   form:{vals:{}, note:"", photo:null, dirty:false},
   returning:null, returnNote:"", actions:{}, editAcc:null, busy:false,
+  assign:new Map(), week:"", qfWorker:"", qfMachine:"",
   report:{month: ymd(new Date()).slice(0,7), checks:[], apprs:new Map(), loaded:false}
 };
 
@@ -385,7 +402,7 @@ const newSalt = () => [...crypto.getRandomValues(new Uint8Array(8))].map(x => x.
 /* ---------- shell ---------- */
 function render(){
   const tabs = S.me ? TABS[S.me.role] : [];
-  if(S.me && !tabs.includes(S.tab)) S.tab = "check";
+  if(S.me && !tabs.includes(S.tab)) S.tab = tabs[0];
   const ja = S.lang==="ja";
   $("#brand").innerHTML = '<h1'+(ja?' style="font-family:var(--jp)"':'')+'>'+(ja?"検針機のチェック項目":"Danh mục kiểm soát vận hành máy kiểm kim")+'</h1><div class="jp">'+(ja?"Danh mục kiểm soát vận hành máy kiểm kim":"検針機のチェック項目")+'</div>';
   $("#who").innerHTML = (S.me ? '<span class="role">'+esc(meName())+' · '+roleL(S.me.role)+'</span>' : '')
@@ -394,10 +411,11 @@ function render(){
   const n = S.me && S.me.role!=="worker" ? pendingList().length : 0;
   $("#tabs").innerHTML = tabs.map(t => '<button role="tab" data-tab="'+t+'" aria-selected="'+(S.tab===t)+'">'+T(TAB_LABEL[t])+(t==="approve"&&n?'<span class="badge">'+n+'</span>':'')+'</button>').join("");
   $("#login").hidden = !!S.me;
-  ["check","approve","accounts","report","settings"].forEach(t => { $("#tab-"+t).hidden = !S.me || S.tab!==t; });
+  ["check","approve","assign","accounts","report","settings"].forEach(t => { $("#tab-"+t).hidden = !S.me || S.tab!==t; });
   if(!S.me){ if(!typingIn("#login")) renderLogin(); return; }
   if(S.tab==="check" && !S.form.dirty){ loadForm(); renderCheck(); }
   if(S.tab==="approve" && !typingIn("#tab-approve")) renderApprove();
+  if(S.tab==="assign" && !typingIn("#tab-assign")) renderAssign();
   if(S.tab==="accounts" && !typingIn("#tab-accounts")) renderAccounts();
   if(S.tab==="settings" && !typingIn("#tab-settings")) renderSettings();
 }
@@ -472,7 +490,9 @@ function syncSession(){
 function mySlots(){
   const out = [];
   S.cfg.machines.forEach(m => { ["S","C"].forEach(sh => {
-    if(S.me.role==="worker"){ if(S.me.machines && S.me.machines.length && !S.me.machines.includes(m.id)) return; if(S.me.shifts && !S.me.shifts.includes(sh)) return; }
+    const as = S.assign.get(S.today+"_"+sh+"_"+m.id);
+    if(as && as.workerId){ if(as.workerId!==S.me.id) return; }
+    else if(!defaultFor(S.me, sh, m.id)) return;
     out.push({shift:sh, machine:m.id, name:m.name}); }); });
   return out;
 }
@@ -484,7 +504,7 @@ function loadForm(){
 function noteLabel(anyNG){ return T(anyNG ? "Ghi chú (bắt buộc khi có ×)" : "Ghi chú"); }
 function renderCheck(){
   const box = $("#tab-check"), slots = mySlots(), ja = S.lang==="ja";
-  if(!slots.length){ box.innerHTML = '<div class="panel"><h2>'+T("Chưa được phân công")+'</h2><div class="notice">'+T("Tài khoản này chưa được phân công máy hoặc ca nào. Hãy báo tổ trưởng.")+'</div></div>'; return; }
+  if(!slots.length){ box.innerHTML = '<div class="panel"><h2>'+T("Chưa được phân công")+'</h2><div class="notice">'+T("Hôm nay bạn chưa được phân công ca kiểm nào. Hãy báo tổ trưởng nếu chưa đúng.")+'</div></div>'; return; }
   if(!slots.some(s => s.shift===S.slot.shift && s.machine===S.slot.machine)){ S.slot = {shift:slots[0].shift, machine:slots[0].machine}; loadForm(); }
   const stWord = {pending:"chờ duyệt", approved:"đã duyệt", returned:"trả lại"};
   const slotHtml = slots.map(s => { const id = S.today+"_"+s.shift+"_"+s.machine, c = S.checks.get(id);
@@ -629,7 +649,7 @@ function accForm(id){
     +'<label class="f grow">'+T("Họ tên")+'<input type="text" id="accName" value="'+esc(a.name)+'"></label></div>'
     +'<div class="row"><label class="f grow">'+T(isNew?"Mật khẩu":"Mật khẩu mới (bỏ trống nếu giữ nguyên)")+'<input type="text" id="accPw" autocomplete="off" placeholder="'+T("ít nhất 4 ký tự")+'"></label>'
     +(admin ? '<label class="f grow">'+T("Vai trò")+'<select id="accRole">'+["worker","leader","admin"].map(r => '<option value="'+r+'"'+(a.role===r?" selected":"")+'>'+roleL(r)+'</option>').join("")+'</select></label>' : '')+'</div>'
-    +'<div class="f"><span>'+T("Phân công kiểm tra (áp dụng cho công nhân)")+'</span><div class="checks">'
+    +'<div class="f"><span>'+T("Phân công mặc định (khi lịch tuần không chọn người riêng)")+'</span><div class="checks">'
       +["S","C"].map(s => '<label><input type="checkbox" name="accShift" value="'+s+'"'+((a.shifts||["S","C"]).includes(s)?" checked":"")+'>'+T("Ca {s}",{s:shiftL(s)})+'</label>').join("")
       +(multi() ? S.cfg.machines.map(m => '<label><input type="checkbox" name="accM" value="'+esc(m.id)+'"'+(!a.machines||!a.machines.length||a.machines.includes(m.id)?" checked":"")+'>'+esc(mName(m.name))+'</label>').join("") : '')
     +'</div></div>'
@@ -685,18 +705,75 @@ $("#tab-accounts").addEventListener("click", async e => {
     S.busy = true; try{ await S.db.doc("accounts/"+b.dataset.id).delete(); toast(T("Đã xoá tài khoản.")); }catch(err){ toast(T("Chưa xoá được.")); } S.busy = false; }
 });
 
-/* ---------- report tab ---------- */
-async function loadReport(){
-  if(!S.db) return;
-  const ym = S.report.month;
+/* ---------- assign tab (phân công theo tuần) ---------- */
+function addDays(s, n){ const p = s.split("-").map(Number); return ymd(new Date(p[0], p[1]-1, p[2]+n)); }
+function mondayOf(s){ const p = s.split("-").map(Number), d = new Date(p[0], p[1]-1, p[2]); return addDays(s, -((d.getDay()+6)%7)); }
+function workerList(){ return [...S.accounts.entries()].filter(([,a]) => a.role==="worker" && a.active).sort((x,y) => x[1].name.localeCompare(y[1].name)); }
+function defaultFor(a, sh, mid){ return (!a.machines || !a.machines.length || a.machines.includes(mid)) && (!a.shifts || a.shifts.includes(sh)); }
+function renderAssign(){
+  const box = $("#tab-assign"), ws = workerList(), days = [0,1,2,3,4,5,6].map(i => addDays(S.week, i)), ms = S.cfg.machines;
+  let h = '<div class="panel"><div class="row between"><h2>'+T("Phân công theo tuần")+'</h2><div class="row"><button class="btn sm" data-wk="-7" aria-label="'+T("Tuần trước")+'">◀</button><span class="mono">'+fmtDate(days[0]).slice(0,5)+' – '+fmtDate(days[6])+'</span><button class="btn sm" data-wk="7" aria-label="'+T("Tuần sau")+'">▶</button></div></div>'
+    +'<div class="sub">'+T("Chọn người kiểm cho từng buổi. Ô để “Theo mặc định” thì áp dụng phân công cố định trong tài khoản. Khi công nhân nghỉ, chọn người thay cho đúng buổi đó.")+'</div>';
+  if(!ws.length){ box.innerHTML = h+'<div class="notice">'+T("Chưa có tài khoản công nhân nào. Tạo ở tab Tài khoản trước.")+'</div></div>'; return; }
+  const opts = sel => ws.map(([id,a]) => '<option value="'+esc(id)+'"'+(id===sel?" selected":"")+'>'+esc(a.name)+'</option>').join("");
+  h += '<div class="card"><b>'+T("Điền nhanh")+'</b><div class="row"><select id="qfWorker" class="grow" aria-label="'+T("Chọn công nhân")+'"><option value="">— '+T("Chọn công nhân")+' —</option>'+opts(S.qfWorker)+'</select>'
+    +(ms.length>1 ? '<select id="qfMachine" class="grow" aria-label="'+T("Máy")+'">'+ms.map(m => '<option value="'+esc(m.id)+'"'+(m.id===S.qfMachine?" selected":"")+'>'+esc(mName(m.name))+'</option>').join("")+'</select>' : '')+'</div>'
+    +'<div class="row"><button class="btn sm" data-qf="SC">'+T("Cả tuần")+'</button><button class="btn sm" data-qf="S">'+T("Các buổi sáng")+'</button><button class="btn sm" data-qf="C">'+T("Các buổi chiều")+'</button><button class="btn sm warn" data-qf="clear">'+T("Xoá phân công tuần này")+'</button></div></div>';
+  h += '<div class="list">';
+  days.forEach(date => { const past = date<S.today;
+    h += '<div class="day'+(past?" off":"")+(date===S.today?" today":"")+'"><div class="dayh"><b>'+dowOf(date)+'</b> <span class="mono">'+fmtDate(date).slice(0,5)+'</span></div><div class="dayg">';
+    ms.forEach(m => { ["S","C"].forEach(sh => { const key = date+"_"+sh+"_"+m.id, as = S.assign.get(key), sel = as ? as.workerId : "";
+      const def = ws.filter(([,a]) => defaultFor(a, sh, m.id)).map(([,a]) => a.name).join(", ") || T("(chưa có ai)");
+      h += '<label class="f">'+shiftL(sh)+(ms.length>1?' · '+esc(mName(m.name)):'')+'<select class="asg'+(sel?" set":"")+'" data-as="'+esc(key)+'"'+(past?" disabled":"")+'>'
+        +'<option value="">'+esc(T("Mặc định: {n}",{n:def}))+'</option>'+opts(sel)
+        +(sel && !ws.some(([id]) => id===sel) ? '<option value="'+esc(sel)+'" selected>'+esc(as.workerName||sel)+'</option>' : '')+'</select></label>'; }); });
+    h += '</div></div>'; });
+  box.innerHTML = h+'</div></div>';
+}
+async function setAssign(key, wid){
+  if(!wid) return S.db.doc("assign/"+key).delete();
+  const p = key.split("_");
+  return S.db.doc("assign/"+key).set({adate:p[0], shift:p[1], machineId:p[2], workerId:wid, workerName:(S.accounts.get(wid)||{}).name||wid, by:S.me.id, at:new Date().toISOString()});
+}
+$("#tab-assign").addEventListener("change", async e => {
+  const el = e.target;
+  if(el.id==="qfWorker"){ S.qfWorker = el.value; return; }
+  if(el.id==="qfMachine"){ S.qfMachine = el.value; return; }
+  if(!el.dataset.as) return;
+  el.blur();
+  try{ await setAssign(el.dataset.as, el.value); toast(T("Đã lưu phân công.")); }catch(err){ toast(T("Chưa lưu được phân công.")); renderAssign(); }
+});
+$("#tab-assign").addEventListener("click", async e => {
+  const b = e.target.closest("button"); if(!b || S.busy) return;
+  if(b.dataset.wk){ S.week = addDays(S.week, +b.dataset.wk); return renderAssign(); }
+  const qf = b.dataset.qf; if(!qf) return;
+  if(qf==="clear" && b.dataset.sure!=="1"){ b.dataset.sure = "1"; b.textContent = T("Bấm lần nữa để xoá"); return; }
+  const wid = S.qfWorker || "", mid = S.cfg.machines.length>1 ? (S.qfMachine || S.cfg.machines[0].id) : S.cfg.machines[0].id;
+  if(qf!=="clear" && !wid) return toast(T("Hãy chọn công nhân trước."));
+  S.busy = true; if(document.activeElement) document.activeElement.blur();
   try{
-    const [c,a] = await Promise.all([S.db.collection("checks").where("month","==",ym).get(), S.db.collection("approvals").where("month","==",ym).get()]);
-    if(ym!==S.report.month) return;
-    S.report.checks = c.docs.map(d => Object.assign({id:d.id}, d.data())).sort((x,y) => x.id<y.id?-1:1);
-    S.report.apprs = new Map(a.docs.map(d => [d.id, d.data()]));
-    S.report.loaded = true;
-  }catch(err){ toast(T("Chưa tải được dữ liệu tháng. Thử lại.")); }
-  renderReport();
+    for(let i=0;i<7;i++){ const date = addDays(S.week, i); if(date<S.today) continue;
+      for(const sh of ["S","C"]){
+        if(qf==="clear"){ for(const m of S.cfg.machines){ const k = date+"_"+sh+"_"+m.id; if(S.assign.has(k)) await setAssign(k, ""); } }
+        else if(qf.includes(sh)) await setAssign(date+"_"+sh+"_"+mid, wid); } }
+    toast(T("Đã lưu phân công."));
+  }catch(err){ toast(T("Chưa lưu được phân công.")); }
+  S.busy = false; renderAssign();
+});
+
+/* ---------- report tab ---------- */
+function loadReport(){
+  if(!S.db) return;
+  const r = S.report, ym = r.month;
+  if(r.sub===ym) return;
+  (r.unsubs||[]).forEach(u => { try{ u(); }catch(e){} });
+  r.sub = ym; r.loaded = false; r.gotC = r.gotA = false;
+  const done = () => { if(r.sub!==ym) return; r.loaded = r.gotC && r.gotA; if(S.me && S.tab==="report") renderReport(); };
+  const fail = () => { if(r.sub===ym){ r.sub = null; toast(T("Chưa tải được dữ liệu tháng. Thử lại.")); } };
+  r.unsubs = [
+    S.db.collection("checks").where("month","==",ym).limit(1000).onSnapshot(q => { if(r.sub!==ym) return; r.checks = q.docs.map(d => Object.assign({id:d.id}, d.data())).sort((x,y) => x.id<y.id?-1:1); r.gotC = true; done(); }, fail),
+    S.db.collection("approvals").where("month","==",ym).limit(1000).onSnapshot(q => { if(r.sub!==ym) return; r.apprs = new Map(q.docs.map(d => [d.id, d.data()])); r.gotA = true; done(); }, fail)
+  ];
 }
 function reportStats(){
   const r = S.report, t = {total:r.checks.length, pass:0, fail:0, ontime:0, late:0, early:0, approved:0, pending:0, returned:0};
@@ -710,12 +787,11 @@ function reportMachines(){
 }
 function renderReport(){
   const box = $("#tab-report"), r = S.report, t = reportStats(), ms = reportMachines();
-  if(typingIn("#tab-report")) return;
   const [y,mo] = r.month.split("-").map(Number), days = new Date(y,mo,0).getDate();
   const by = new Map(r.checks.map(c => [c.id, c]));
   const tile = (n, label, color) => '<div class="tile"><b'+(color?' style="color:var(--'+color+')"':'')+'>'+n+'</b><span>'+T(label)+'</span></div>';
   let h = '<div class="panel"><div class="row between"><label class="f" for="month">'+T("Tháng báo cáo")+'<input type="month" id="month" value="'+r.month+'"></label>'
-    +'<div class="row"><button class="btn sm" id="reload">'+T("Tải lại")+'</button>'+(S.downloads ? '<button class="btn pri sm" id="xlsx"'+(t.total?"":" disabled")+'>'+T("Xuất Excel")+'</button>' : '')+'</div></div>'
+    +'<div class="row">'+(S.downloads ? '<button class="btn pri sm" id="xlsx"'+(t.total?"":" disabled")+'>'+T("Xuất Excel")+'</button>' : '')+'</div></div>'
     +(S.downloads ? '' : '<div class="notice">'+T("Trình xem này không cho tải file. Hãy mở trang trên trình duyệt máy tính để xuất Excel.")+'</div>')
     +'<div class="tiles">'+tile(t.total,"Lần kiểm đã ghi")+tile(t.pass,"Đạt")+tile(t.fail,"Không đạt","ng")+tile(t.ontime,"Đúng giờ")+tile(t.late,"Trễ giờ","ng")+tile(t.pending+t.returned,"Chưa duyệt xong","wait")+'</div></div>';
   h += '<div class="panel"><h2>'+T("Bảng theo ngày")+'</h2>';
@@ -737,11 +813,15 @@ function renderReport(){
     h += '</div>'; }
   box.innerHTML = h;
 }
-$("#tab-report").addEventListener("change", e => { if(e.target.id==="month" && e.target.value){ S.report.month = e.target.value; S.report.loaded=false; S.report.checks=[]; e.target.blur(); renderReport(); loadReport(); } });
+function onMonth(e){ const v = e.target.value; if(e.target.id!=="month" || !/^\d{4}-\d{2}$/.test(v) || v===S.report.month) return;
+  S.report.month = v; S.report.loaded = false; S.report.checks = []; S.report.apprs = new Map(); loadReport();
+  if(e.type==="change"){ e.target.blur(); renderReport(); } }
+$("#tab-report").addEventListener("change", onMonth);
+$("#tab-report").addEventListener("input", onMonth);
 $("#tab-report").addEventListener("click", async e => {
   const b = e.target.closest("button"); if(!b) return;
   if(b.dataset.photo){ b.disabled = true; await fetchPhoto(b.dataset.photo); return renderReport(); }
-  if(b.id==="reload") loadReport(); if(b.id==="xlsx") exportXlsx();
+  if(b.id==="xlsx") exportXlsx();
 });
 async function exportXlsx(){
   if(typeof XLSX==="undefined") return toast(T("Chưa tải được thư viện Excel. Tải lại trang rồi thử lại."));
@@ -805,6 +885,8 @@ function start(){
       const m = new Map(); Object.values(live[c]).forEach(ds => ds.forEach(d => m.set(d.id, d.data())));
       if(c==="checks") S.checks = m; else S.apprs = m; render(); }, fail); }); });
   db.collection("tr").onSnapshot(q => { let n = 0; q.docs.forEach(d => { const o = d.data().out; if(o && S.tr.get(d.id)!==o){ S.tr.set(d.id, o); n++; } }); if(n) refresh(); }, () => {});
+  S.week = mondayOf(S.today);
+  if(S.db) S.db.collection("assign").where("adate",">=",addDays(S.today,-14)).limit(1000).onSnapshot(q => { S.assign = new Map(q.docs.map(d => [d.id, d.data()])); render(); }, () => {});
   setInterval(() => { const t = ymd(new Date()); if(t!==S.today && !S.form.dirty){ S.today = t; render(); } }, 60000);
 }
 start();
