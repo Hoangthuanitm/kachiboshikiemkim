@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Kiểm soát máy kiểm kim</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -28,6 +28,12 @@
   color-scheme:dark }
 
 *{box-sizing:border-box}
+/* Giao diện cố định trên điện thoại: không phóng to khi chạm 2 lần, không chụm để zoom, không tự zoom khi chạm vào ô nhập */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;touch-action:pan-x pan-y}
+body{overflow-x:hidden;touch-action:pan-x pan-y;overscroll-behavior-x:none}
+button,.btn,.slot,.okng button,.tabs button,label{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+button,.btn,.slot,.chip,.role,.tabs{-webkit-user-select:none;user-select:none}
+@media (max-width:820px){ input[type=text],input[type=password],input[type=month],input[type=time],select,textarea{font-size:16px} }
 [hidden]{display:none!important}
 img{max-width:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.5}
@@ -89,6 +95,11 @@ textarea{min-height:70px;resize:vertical}
 .btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .btn.warn{color:var(--ng);border-color:var(--ng)}
 .btn.sm{padding:6px 10px;font-size:13px}
+.btn.cam{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:56px;font-size:15px;color:var(--ng);border:2px dashed var(--ng);background:var(--ng-soft)}
+.btn.cam.done{color:var(--ink);border:1.5px solid var(--line);background:var(--surface);min-height:46px}
+.btn.cam svg{flex:none}
+.vh{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;clip-path:inset(50%)}
+.vh:focus-visible + #photoPrev, .btn.cam:focus-within{outline:2px solid var(--accent);outline-offset:2px}
 .btn:disabled{opacity:.5;cursor:default}
 
 .chip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
@@ -181,6 +192,9 @@ function makeDb(){
       return api; }
   };
 }
+/* Chặn chụm-để-zoom trên iOS Safari (nơi bỏ qua user-scalable=no); chạm 2 lần đã bị tắt bằng touch-action trong CSS */
+["gesturestart","gesturechange","gestureend"].forEach(ev => document.addEventListener(ev, e => e.preventDefault(), {passive:false}));
+document.addEventListener("touchmove", e => { if(e.touches.length>1) e.preventDefault(); }, {passive:false});
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const ITEMS = [
@@ -223,6 +237,7 @@ const JA = {
 "Đã quá giờ quy định {n} phút":"規定時刻を{n}分超過","Chưa tới giờ kiểm ca này":"まだ点検時間ではありません","Đang trong giờ quy định":"規定時間内です",
 "Ca {s} phải kiểm xong trước {due}, tính từ {from}. Giờ kiểm được ghi tự động khi lưu.":"{s}の点検は{from}から{due}までに完了してください。点検時刻は保存時に自動記録されます。",
 "Ngưng kiểm hàng và báo ngay cho tổ trưởng.":"異常を発見した場合は作業を中止し、班長に通報ください。",
+"Chụp ảnh bằng chứng":"証拠写真を撮る","Chụp lại ảnh":"写真を撮り直す",
 "Ảnh bằng chứng (bắt buộc khi có ×)":"証拠写真（×がある場合は必須）","Đang tải ảnh đã lưu…":"保存済みの写真を読み込み中…",
 "Ghi chú (bắt buộc khi có ×)":"備考（×がある場合は必須）","Ghi chú":"備考","Mô tả bất thường…":"異常の内容…",
 "Phiếu đã được tổ trưởng duyệt nên không sửa được nữa.":"班長が承認済みのため、修正できません。",
@@ -274,6 +289,7 @@ const JA = {
 "Tạo Admin và đăng nhập":"管理者を作成してログイン"
 };
 
+const CAM_ICON = '<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l1.6-2.4h6.8L17 8h3a1.5 1.5 0 0 1 1.5 1.5v8A1.5 1.5 0 0 1 20 19H4a1.5 1.5 0 0 1-1.5-1.5v-8A1.5 1.5 0 0 1 4 8z"/><circle cx="12" cy="13" r="3.6"/></svg>';
 const pad = n => String(n).padStart(2,"0");
 const ymd = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
 const fmtDate = s => { const p = String(s||"").split("-"); return p.length===3 ? p[2]+"/"+p[1]+"/"+p[0] : ""; };
@@ -489,7 +505,7 @@ function renderCheck(){
    +'<div class="panel">'+status+'<div class="items">'+items+'</div>'
    +'<div class="alert" id="ngAlert"'+(anyNG?"":" hidden")+'>'+T("Ngưng kiểm hàng và báo ngay cho tổ trưởng.")+'<span class="jp">'+(ja?"Ngưng kiểm hàng và báo ngay cho tổ trưởng.":"異常を発見した場合は作業を中止し、通報ください。")+'</span></div>'
    +'<div class="f" id="photoWrap"'+(anyNG?"":" hidden")+'><span>'+T("Ảnh bằng chứng (bắt buộc khi có ×)")+'</span>'
-     +(locked ? '' : '<input type="file" id="photo" accept="image/*" capture="environment">')
+     +(locked ? '' : '<label class="btn cam'+(havePhoto?" done":"")+'" id="camBtn" for="photo">'+CAM_ICON+'<span id="camTxt">'+T(havePhoto?"Chụp lại ảnh":"Chụp ảnh bằng chứng")+'</span></label><input type="file" id="photo" class="vh" accept="image/*" capture="environment">')
      +'<div id="photoPrev">'+(havePhoto ? '<img class="photo" alt="'+alt+'" src="'+havePhoto+'">' : (c && c.hasPhoto ? '<span class="sub">'+T("Đang tải ảnh đã lưu…")+'</span>' : ''))+'</div></div>'
    +'<label class="f" for="note"><span id="noteLbl">'+noteLabel(anyNG)+'</span><textarea id="note"'+(locked?" disabled":"")+' placeholder="'+T("Mô tả bất thường…")+'">'+esc(f.note)+'</textarea></label>'
    +(locked && c.note && needTr(c.note) ? '<div class="sub">'+txt(c.note)+'</div>' : '')
@@ -526,7 +542,8 @@ $("#tab-check").addEventListener("click", e => {
 $("#tab-check").addEventListener("input", e => { if(e.target.id==="note"){ S.form.note = e.target.value; S.form.dirty = true; } });
 $("#tab-check").addEventListener("change", async e => {
   if(e.target.id!=="photo" || !e.target.files[0]) return;
-  try{ S.form.photo = await compressImage(e.target.files[0]); S.form.dirty = true; $("#photoPrev").innerHTML = '<img class="photo" alt="'+T("Ảnh bằng chứng lỗi")+'" src="'+S.form.photo+'">'; }
+  try{ S.form.photo = await compressImage(e.target.files[0]); S.form.dirty = true; $("#photoPrev").innerHTML = '<img class="photo" alt="'+T("Ảnh bằng chứng lỗi")+'" src="'+S.form.photo+'">';
+    const cb = $("#camBtn"); if(cb){ cb.classList.add("done"); $("#camTxt").textContent = T("Chụp lại ảnh"); } }
   catch(err){ toast(T("Không đọc được ảnh này. Hãy chụp lại.")); }
 });
 async function saveCheck(){
