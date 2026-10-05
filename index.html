@@ -4,7 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Kiểm soát máy kiểm kim</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://firestore.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Font tải nền, không chặn việc hiện trang; trong lúc chờ dùng font có sẵn của máy -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" media="print" onload="this.media='all'">
 <style>
 /* Layout: one narrow working column (phone at the machine first), sticky header with account + tabs,
    each tab is a stack of plain panels; the monthly grid mirrors the paper form (day rows x shift columns). */
@@ -167,12 +171,14 @@ select.asg.set{color:var(--ink);border-color:var(--accent);background:var(--acce
 </main>
 <div id="toast" hidden></div>
 
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 (function(){
 "use strict";
+/* Thư viện được tải SAU khi giao diện đã hiện, để trang mở lên ngay. Thư viện Excel chỉ tải khi bấm Xuất Excel. */
+const FB_URL = "https://www.gstatic.com/firebasejs/10.12.2/";
+const XLSX_URL = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+const loaded = {};
+function loadScript(url){ return loaded[url] || (loaded[url] = new Promise((res, rej) => { const el = document.createElement("script"); el.src = url; el.async = true; el.onload = res; el.onerror = () => { delete loaded[url]; rej(new Error("load")); }; document.head.appendChild(el); })); }
 /* ====== Firebase ====== */
 const firebaseConfig = {
   apiKey: "AIzaSyAfy4QMD9_7PyFHpInNdKDRWuW4AYCtLJ4",
@@ -295,6 +301,7 @@ const JA = {
 "Hôm nay bạn chưa được phân công ca kiểm nào. Hãy báo tổ trưởng nếu chưa đúng.":"本日はあなたに割り当てられた点検がありません。誤りがあれば班長に連絡してください。",
 "Ngày nghỉ":"休日","Ngày nghỉ – không cần kiểm máy.":"休日のため点検は不要です。","Hôm nay là ngày nghỉ. Không cần kiểm máy.":"本日は休日です。点検は不要です。","Nghỉ":"休み",
 "Chủ nhật không cần phân công. Thứ bảy nào nghỉ thì đánh dấu “Ngày nghỉ” để không phải kiểm.":"日曜日は割当不要です。休みの土曜日は「休日」にチェックすると点検不要になります。",
+"Đang chuẩn bị file Excel…":"Excelファイルを準備中…",
 "Tháng báo cáo":"対象月","Tải lại":"再読み込み","Xuất Excel":"Excel出力",
 "Trình xem này không cho tải file. Hãy mở trang trên trình duyệt máy tính để xuất Excel.":"この画面ではファイルを保存できません。パソコンのブラウザで開いてExcel出力してください。",
 "Lần kiểm đã ghi":"点検記録数","Trễ giờ":"遅れ","Chưa duyệt xong":"未承認","Bảng theo ngày":"日別一覧","Đang tải dữ liệu tháng…":"月次データを読み込み中…",
@@ -842,6 +849,7 @@ $("#tab-report").addEventListener("click", async e => {
   if(b.id==="xlsx") exportXlsx();
 });
 async function exportXlsx(){
+  if(typeof XLSX==="undefined"){ toast(T("Đang chuẩn bị file Excel…")); try{ await loadScript(XLSX_URL); }catch(e){} }
   if(typeof XLSX==="undefined") return toast(T("Chưa tải được thư viện Excel. Tải lại trang rồi thử lại."));
   const r = S.report, t = reportStats();
   const rows = [["Ngày","Thứ","Ca","Giờ quy định (trước)","Giờ kiểm thực tế","Đúng giờ","Trễ (phút)","Máy","Độ cảm biến - Trái","Độ cảm biến - Giữa","Độ cảm biến - Phải","Tốc độ máy","Âm báo + thời gian báo","Kết quả","Người thực hiện","ID người thực hiện","Ghi chú lỗi","Ảnh bằng chứng","Trạng thái duyệt","Người duyệt","Thời gian duyệt","Biện pháp đã thực hiện","Lý do trả lại"].map(x => T(x))];
@@ -883,11 +891,15 @@ $("#tab-settings").addEventListener("click", async e => {
 
 /* ---------- boot ---------- */
 function prevMonth(ym){ const p = ym.split("-").map(Number), d = new Date(p[0], p[1]-2, 1); return d.getFullYear()+"-"+pad(d.getMonth()+1); }
-function start(){
+async function start(){
   render();
+  try{ await Promise.all([loadScript(FB_URL+"firebase-app-compat.js")]); await loadScript(FB_URL+"firebase-firestore-compat.js"); }catch(e){}
   S.downloads = true; S.ready = true;
   if(typeof firebase==="undefined"){ S.dbErr = "Không tải được thư viện Firebase. Kiểm tra mạng rồi tải lại trang."; return render(); }
-  try{ firebase.initializeApp(firebaseConfig); S.db = makeDb(); }catch(e){ S.dbErr = "Không tải được thư viện Firebase. Kiểm tra mạng rồi tải lại trang."; return render(); }
+  try{ firebase.initializeApp(firebaseConfig);
+    /* Lưu đệm dữ liệu trên máy: lần mở sau hiện ngay từ bộ nhớ đệm rồi mới đồng bộ, và vẫn xem được khi mạng chập chờn */
+    try{ await firebase.firestore().enablePersistence({synchronizeTabs:true}); }catch(e){}
+    S.db = makeDb(); }catch(e){ S.dbErr = "Không tải được thư viện Firebase. Kiểm tra mạng rồi tải lại trang."; return render(); }
   S.sample = TRANSLATE_API_KEY ? true : null;
   const db = S.db;
   const fail = e => { if(e && e.code==="permission-denied"){ S.dbErr = "Firestore từ chối truy cập. Hãy mở quyền đọc/ghi cho collection này trong Security Rules rồi tải lại trang."; S.me = null; render(); } else toast(T("Mất kết nối dữ liệu. Tải lại trang.")); };
