@@ -134,6 +134,9 @@ tr.sun td{color:var(--muted)}
 .day{border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
 .day.off{opacity:.55}
 .day.today{border-color:var(--accent)}
+.dayh{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.offt{display:flex;gap:6px;align-items:center;font-size:14px;font-weight:600;padding:4px 10px;border:1.5px solid var(--line);border-radius:999px;cursor:pointer}
+.offt input{width:18px;height:18px;font-size:16px}
 .dayg{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:8px}
 select.asg{color:var(--muted)}
 select.asg.set{color:var(--ink);border-color:var(--accent);background:var(--accent-soft);font-weight:600}
@@ -185,7 +188,7 @@ const COLLECTION = "kachiboshivnkiemkim";
    nếu project chưa bật Cloud Translation API thì app chỉ hiện bản gốc. Đặt "" để tắt hẳn. */
 const TRANSLATE_API_KEY = firebaseConfig.apiKey;
 /* Mọi dữ liệu nằm trong MỘT collection; mỗi document có trường "type" và id có tiền tố theo loại. */
-const TYPES = {checks:"check", approvals:"appr", accounts:"acc", photos:"photo", config:"config", tr:"tr", assign:"assign"};
+const TYPES = {checks:"check", approvals:"appr", accounts:"acc", photos:"photo", config:"config", tr:"tr", assign:"assign", off:"off"};
 function makeDb(){
   const col = firebase.firestore().collection(COLLECTION);
   const wrap = (d, p) => ({id:d.id.slice(p.length), exists:d.exists, data:() => d.data()});
@@ -290,6 +293,8 @@ const JA = {
 "Mặc định: {n}":"既定：{n}","(chưa có ai)":"（担当なし）","Hãy chọn công nhân trước.":"先に作業者を選んでください。","Đã lưu phân công.":"担当を保存しました。","Chưa lưu được phân công.":"担当を保存できませんでした。",
 "Phân công mặc định (khi lịch tuần không chọn người riêng)":"既定の担当（週間担当表で指定がない場合）",
 "Hôm nay bạn chưa được phân công ca kiểm nào. Hãy báo tổ trưởng nếu chưa đúng.":"本日はあなたに割り当てられた点検がありません。誤りがあれば班長に連絡してください。",
+"Ngày nghỉ":"休日","Ngày nghỉ – không cần kiểm máy.":"休日のため点検は不要です。","Hôm nay là ngày nghỉ. Không cần kiểm máy.":"本日は休日です。点検は不要です。","Nghỉ":"休み",
+"Chủ nhật không cần phân công. Thứ bảy nào nghỉ thì đánh dấu “Ngày nghỉ” để không phải kiểm.":"日曜日は割当不要です。休みの土曜日は「休日」にチェックすると点検不要になります。",
 "Tháng báo cáo":"対象月","Tải lại":"再読み込み","Xuất Excel":"Excel出力",
 "Trình xem này không cho tải file. Hãy mở trang trên trình duyệt máy tính để xuất Excel.":"この画面ではファイルを保存できません。パソコンのブラウザで開いてExcel出力してください。",
 "Lần kiểm đã ghi":"点検記録数","Trễ giờ":"遅れ","Chưa duyệt xong":"未承認","Bảng theo ngày":"日別一覧","Đang tải dữ liệu tháng…":"月次データを読み込み中…",
@@ -332,7 +337,7 @@ const S = {
   slot:{shift: new Date().getHours()<12 ? "S" : "C", machine:"m1"},
   form:{vals:{}, note:"", photo:null, dirty:false},
   returning:null, returnNote:"", actions:{}, editAcc:null, busy:false,
-  assign:new Map(), week:"", qfWorker:"", qfMachine:"",
+  assign:new Map(), off:new Set(), week:"", qfWorker:"", qfMachine:"",
   report:{month: ymd(new Date()).slice(0,7), checks:[], apprs:new Map(), loaded:false}
 };
 
@@ -489,6 +494,7 @@ function syncSession(){
 /* ---------- check tab ---------- */
 function mySlots(){
   const out = [];
+  if(isOff(S.today)) return out;
   S.cfg.machines.forEach(m => { ["S","C"].forEach(sh => {
     const as = S.assign.get(S.today+"_"+sh+"_"+m.id);
     if(as && as.workerId){ if(as.workerId!==S.me.id) return; }
@@ -504,6 +510,7 @@ function loadForm(){
 function noteLabel(anyNG){ return T(anyNG ? "Ghi chú (bắt buộc khi có ×)" : "Ghi chú"); }
 function renderCheck(){
   const box = $("#tab-check"), slots = mySlots(), ja = S.lang==="ja";
+  if(isOff(S.today)){ box.innerHTML = '<div class="panel"><h2>'+dowOf(S.today)+', <span class="mono">'+fmtDate(S.today)+'</span></h2><div class="notice">'+T("Hôm nay là ngày nghỉ. Không cần kiểm máy.")+'</div></div>'; return; }
   if(!slots.length){ box.innerHTML = '<div class="panel"><h2>'+T("Chưa được phân công")+'</h2><div class="notice">'+T("Hôm nay bạn chưa được phân công ca kiểm nào. Hãy báo tổ trưởng nếu chưa đúng.")+'</div></div>'; return; }
   if(!slots.some(s => s.shift===S.slot.shift && s.machine===S.slot.machine)){ S.slot = {shift:slots[0].shift, machine:slots[0].machine}; loadForm(); }
   const stWord = {pending:"chờ duyệt", approved:"đã duyệt", returned:"trả lại"};
@@ -706,23 +713,29 @@ $("#tab-accounts").addEventListener("click", async e => {
 });
 
 /* ---------- assign tab (phân công theo tuần) ---------- */
+function isSunday(s){ const p = s.split("-").map(Number); return new Date(p[0],p[1]-1,p[2]).getDay()===0; }
+function isSaturday(s){ const p = s.split("-").map(Number); return new Date(p[0],p[1]-1,p[2]).getDay()===6; }
+/* Ngày không cần kiểm: mọi Chủ nhật, và Thứ bảy nào được tổ trưởng đánh dấu là ngày nghỉ */
+function isOff(s){ return isSunday(s) || S.off.has(s); }
 function addDays(s, n){ const p = s.split("-").map(Number); return ymd(new Date(p[0], p[1]-1, p[2]+n)); }
 function mondayOf(s){ const p = s.split("-").map(Number), d = new Date(p[0], p[1]-1, p[2]); return addDays(s, -((d.getDay()+6)%7)); }
 function workerList(){ return [...S.accounts.entries()].filter(([,a]) => a.role==="worker" && a.active).sort((x,y) => x[1].name.localeCompare(y[1].name)); }
 function defaultFor(a, sh, mid){ return (!a.machines || !a.machines.length || a.machines.includes(mid)) && (!a.shifts || a.shifts.includes(sh)); }
 function renderAssign(){
-  const box = $("#tab-assign"), ws = workerList(), days = [0,1,2,3,4,5,6].map(i => addDays(S.week, i)), ms = S.cfg.machines;
-  let h = '<div class="panel"><div class="row between"><h2>'+T("Phân công theo tuần")+'</h2><div class="row"><button class="btn sm" data-wk="-7" aria-label="'+T("Tuần trước")+'">◀</button><span class="mono">'+fmtDate(days[0]).slice(0,5)+' – '+fmtDate(days[6])+'</span><button class="btn sm" data-wk="7" aria-label="'+T("Tuần sau")+'">▶</button></div></div>'
-    +'<div class="sub">'+T("Chọn người kiểm cho từng buổi. Ô để “Theo mặc định” thì áp dụng phân công cố định trong tài khoản. Khi công nhân nghỉ, chọn người thay cho đúng buổi đó.")+'</div>';
+  const box = $("#tab-assign"), ws = workerList(), days = [0,1,2,3,4,5].map(i => addDays(S.week, i)), ms = S.cfg.machines;
+  let h = '<div class="panel"><div class="row between"><h2>'+T("Phân công theo tuần")+'</h2><div class="row"><button class="btn sm" data-wk="-7" aria-label="'+T("Tuần trước")+'">◀</button><span class="mono">'+fmtDate(days[0]).slice(0,5)+' – '+fmtDate(days[5])+'</span><button class="btn sm" data-wk="7" aria-label="'+T("Tuần sau")+'">▶</button></div></div>'
+    +'<div class="sub">'+T("Chọn người kiểm cho từng buổi. Ô để “Theo mặc định” thì áp dụng phân công cố định trong tài khoản. Khi công nhân nghỉ, chọn người thay cho đúng buổi đó.")+' '+T("Chủ nhật không cần phân công. Thứ bảy nào nghỉ thì đánh dấu “Ngày nghỉ” để không phải kiểm.")+'</div>';
   if(!ws.length){ box.innerHTML = h+'<div class="notice">'+T("Chưa có tài khoản công nhân nào. Tạo ở tab Tài khoản trước.")+'</div></div>'; return; }
   const opts = sel => ws.map(([id,a]) => '<option value="'+esc(id)+'"'+(id===sel?" selected":"")+'>'+esc(a.name)+'</option>').join("");
   h += '<div class="card"><b>'+T("Điền nhanh")+'</b><div class="row"><select id="qfWorker" class="grow" aria-label="'+T("Chọn công nhân")+'"><option value="">— '+T("Chọn công nhân")+' —</option>'+opts(S.qfWorker)+'</select>'
     +(ms.length>1 ? '<select id="qfMachine" class="grow" aria-label="'+T("Máy")+'">'+ms.map(m => '<option value="'+esc(m.id)+'"'+(m.id===S.qfMachine?" selected":"")+'>'+esc(mName(m.name))+'</option>').join("")+'</select>' : '')+'</div>'
     +'<div class="row"><button class="btn sm" data-qf="SC">'+T("Cả tuần")+'</button><button class="btn sm" data-qf="S">'+T("Các buổi sáng")+'</button><button class="btn sm" data-qf="C">'+T("Các buổi chiều")+'</button><button class="btn sm warn" data-qf="clear">'+T("Xoá phân công tuần này")+'</button></div></div>';
   h += '<div class="list">';
-  days.forEach(date => { const past = date<S.today;
-    h += '<div class="day'+(past?" off":"")+(date===S.today?" today":"")+'"><div class="dayh"><b>'+dowOf(date)+'</b> <span class="mono">'+fmtDate(date).slice(0,5)+'</span></div><div class="dayg">';
-    ms.forEach(m => { ["S","C"].forEach(sh => { const key = date+"_"+sh+"_"+m.id, as = S.assign.get(key), sel = as ? as.workerId : "";
+  days.forEach(date => { const past = date<S.today, sat = isSaturday(date), off = S.off.has(date);
+    h += '<div class="day'+(past?" off":"")+(date===S.today?" today":"")+'"><div class="dayh"><span><b>'+dowOf(date)+'</b> <span class="mono">'+fmtDate(date).slice(0,5)+'</span></span>'
+      +(sat ? '<label class="offt"><input type="checkbox" data-off="'+date+'"'+(off?" checked":"")+(past?" disabled":"")+'>'+T("Ngày nghỉ")+'</label>' : '')+'</div><div class="dayg">';
+    if(off) h += '<div class="notice" style="grid-column:1/-1">'+T("Ngày nghỉ – không cần kiểm máy.")+'</div>';
+    else ms.forEach(m => { ["S","C"].forEach(sh => { const key = date+"_"+sh+"_"+m.id, as = S.assign.get(key), sel = as ? as.workerId : "";
       const def = ws.filter(([,a]) => defaultFor(a, sh, m.id)).map(([,a]) => a.name).join(", ") || T("(chưa có ai)");
       h += '<label class="f">'+shiftL(sh)+(ms.length>1?' · '+esc(mName(m.name)):'')+'<select class="asg'+(sel?" set":"")+'" data-as="'+esc(key)+'"'+(past?" disabled":"")+'>'
         +'<option value="">'+esc(T("Mặc định: {n}",{n:def}))+'</option>'+opts(sel)
@@ -739,6 +752,10 @@ $("#tab-assign").addEventListener("change", async e => {
   const el = e.target;
   if(el.id==="qfWorker"){ S.qfWorker = el.value; return; }
   if(el.id==="qfMachine"){ S.qfMachine = el.value; return; }
+  if(el.dataset.off){ el.blur(); const d = el.dataset.off;
+    try{ if(el.checked) await S.db.doc("off/"+d).set({date:d, month:d.slice(0,7), by:S.me.id, at:new Date().toISOString()}); else await S.db.doc("off/"+d).delete(); toast(T("Đã lưu phân công.")); }
+    catch(err){ toast(T("Chưa lưu được phân công.")); renderAssign(); }
+    return; }
   if(!el.dataset.as) return;
   el.blur();
   try{ await setAssign(el.dataset.as, el.value); toast(T("Đã lưu phân công.")); }catch(err){ toast(T("Chưa lưu được phân công.")); renderAssign(); }
@@ -753,6 +770,7 @@ $("#tab-assign").addEventListener("click", async e => {
   S.busy = true; if(document.activeElement) document.activeElement.blur();
   try{
     for(let i=0;i<7;i++){ const date = addDays(S.week, i); if(date<S.today) continue;
+      if(qf!=="clear" && isOff(date)) continue;
       for(const sh of ["S","C"]){
         if(qf==="clear"){ for(const m of S.cfg.machines){ const k = date+"_"+sh+"_"+m.id; if(S.assign.has(k)) await setAssign(k, ""); } }
         else if(qf.includes(sh)) await setAssign(date+"_"+sh+"_"+mid, wid); } }
@@ -798,10 +816,10 @@ function renderReport(){
   if(!r.loaded) h += '<div class="notice">'+T("Đang tải dữ liệu tháng…")+'</div>';
   else if(!t.total) h += '<div class="notice">'+T("Tháng này chưa có lần kiểm nào được ghi.")+'</div>';
   else { h += '<div class="scroll"><table><tr><th>'+T("Ngày")+'</th><th>'+T("Thứ")+'</th>'+ms.map(m => '<th>'+(ms.length>1?esc(m.name)+' · ':'')+T("Sáng")+'</th><th>'+(ms.length>1?esc(m.name)+' · ':'')+T("Chiều")+'</th>').join("")+'</tr>';
-    for(let d=1; d<=days; d++){ const date = r.month+"-"+pad(d), sun = new Date(y,mo-1,d).getDay()===0;
+    for(let d=1; d<=days; d++){ const date = r.month+"-"+pad(d), sun = isOff(date);
       h += '<tr'+(sun?' class="sun"':'')+'><td class="d">'+pad(d)+'/'+pad(mo)+'</td><td>'+dowOf(date)+'</td>';
       ms.forEach(m => { ["S","C"].forEach(sh => { const c = by.get(date+"_"+sh+"_"+m.id);
-        h += '<td>'+(c ? resultChip(c)+' <span class="mono">'+fmtTime(c.firstAt)+'</span>'+(c.timing&&c.timing!=="ontime" ? ' '+timingChip(c) : '')+(stateOf(c,r.apprs.get(c.id))==="approved" ? '' : ' <span class="chip plain">'+T("chưa duyệt")+'</span>') : '<span class="sub">—</span>')+'</td>'; }); });
+        h += '<td>'+(c ? resultChip(c)+' <span class="mono">'+fmtTime(c.firstAt)+'</span>'+(c.timing&&c.timing!=="ontime" ? ' '+timingChip(c) : '')+(stateOf(c,r.apprs.get(c.id))==="approved" ? '' : ' <span class="chip plain">'+T("chưa duyệt")+'</span>') : (sun ? '<span class="chip plain">'+T("Nghỉ")+'</span>' : '<span class="sub">—</span>'))+'</td>'; }); });
       h += '</tr>'; }
     h += '</table></div>'; }
   h += '</div>';
@@ -887,6 +905,7 @@ function start(){
   db.collection("tr").onSnapshot(q => { let n = 0; q.docs.forEach(d => { const o = d.data().out; if(o && S.tr.get(d.id)!==o){ S.tr.set(d.id, o); n++; } }); if(n) refresh(); }, () => {});
   S.week = mondayOf(S.today);
   if(S.db) S.db.collection("assign").where("adate",">=",addDays(S.today,-14)).limit(1000).onSnapshot(q => { S.assign = new Map(q.docs.map(d => [d.id, d.data()])); render(); }, () => {});
+  if(S.db) S.db.collection("off").limit(1000).onSnapshot(q => { S.off = new Set(q.docs.map(d => d.id)); render(); if(S.me && S.tab==="report") renderReport(); }, () => {});
   setInterval(() => { const t = ymd(new Date()); if(t!==S.today && !S.form.dirty){ S.today = t; render(); } }, 60000);
 }
 start();
