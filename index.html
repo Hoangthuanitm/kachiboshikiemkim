@@ -229,7 +229,7 @@ const ITEMS = [
 const DOW = {vi:["Chủ nhật","Thứ hai","Thứ ba","Thứ tư","Thứ năm","Thứ sáu","Thứ bảy"], ja:["日曜日","月曜日","火曜日","水曜日","木曜日","金曜日","土曜日"]};
 const DEFAULT_TIMES = {S:{from:"06:00", due:"07:30"}, C:{from:"12:00", due:"13:00"}};
 const DEFAULT_MACHINES = [{id:"m1", name:"Máy kiểm kim"}];
-const TABS = {admin:["approve","assign","accounts","report","settings"], leader:["approve","assign","accounts"], worker:["check"]};
+const TABS = {admin:["approve","assign","accounts","report","settings"], leader:["approve","assign","accounts","report"], worker:["check"]};
 const TAB_LABEL = {check:"Kiểm máy", approve:"Duyệt", assign:"Phân công", accounts:"Tài khoản", report:"Tổng hợp tháng", settings:"Cài đặt"};
 const ROLE_LABEL = {admin:"Admin", leader:"Tổ trưởng", worker:"Công nhân"};
 
@@ -600,8 +600,8 @@ async function saveCheck(){
     if(anyNG && f.photo){ await S.db.doc("photos/"+id).set({data:f.photo, at:doc.at}); S.photos.set(id, f.photo); }
     await S.db.doc("checks/"+id).set(doc); S.form.dirty = false;
     toast(anyNG ? T("Đã lưu. Báo ngay cho tổ trưởng.") : tm.timing==="late" ? T("Đã lưu. Lần kiểm này trễ {n} phút.",{n:tm.lateMin}) : T("Đã lưu kết quả kiểm."));
-  }catch(err){ toast(T(err && err.code==="permission-denied" ? "Firestore từ chối quyền ghi. Kiểm tra Security Rules." : "Chưa lưu được. Kiểm tra mạng rồi bấm lưu lại.")); const b=$("#saveBtn"); if(b) b.disabled=false; }
-  S.busy = false;
+  }catch(err){ toast(T(err && err.code==="permission-denied" ? "Firestore từ chối quyền ghi. Kiểm tra Security Rules." : "Chưa lưu được. Kiểm tra mạng rồi bấm lưu lại.")); }
+  S.busy = false; const sb = $("#saveBtn"); if(sb) sb.disabled = false; render();   /* vẽ lại để hiện trạng thái vừa lưu */
 }
 
 /* ---------- approve tab ---------- */
