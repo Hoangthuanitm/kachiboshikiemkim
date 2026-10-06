@@ -235,6 +235,7 @@ const ROLE_LABEL = {admin:"Admin", leader:"Tổ trưởng", worker:"Công nhân"
 
 /* Japanese UI text, keyed by the Vietnamese original */
 const JA = {
+"Chờ tổ trưởng duyệt. Admin chỉ xem.":"班長の承認待ちです。管理者は閲覧のみ。",
 "Danh mục kiểm soát vận hành máy kiểm kim":"検針機のチェック項目","Máy kiểm kim":"検針機",
 "Kiểm máy":"点検","Duyệt":"承認","Tài khoản":"アカウント","Tổng hợp tháng":"月次集計","Cài đặt":"設定",
 "Admin":"管理者","Tổ trưởng":"班長","Công nhân":"作業者","Chủ trang":"ページ所有者",
@@ -607,14 +608,15 @@ async function saveCheck(){
 /* ---------- approve tab ---------- */
 function renderApprove(){
   const box = $("#tab-approve");
-  const pend = pendingList(), okN = pend.filter(([,c]) => isPass(c)).length;
+  const ro = S.me.role!=="leader";   /* admin chỉ xem, tổ trưởng mới duyệt */
+  const pend = pendingList(), okN = ro ? 0 : pend.filter(([,c]) => isPass(c)).length;
   let h = '<div class="panel"><div class="row between"><h2>'+T("Chờ duyệt ({n})",{n:pend.length})+'</h2>'+(okN>1 ? '<button class="btn sm" id="approveAll">'+T("Duyệt tất cả phiếu Đạt ({n})",{n:okN})+'</button>' : '')+'</div>';
   if(!pend.length) h += '<div class="notice">'+T("Không còn phiếu nào chờ duyệt. Phiếu công nhân lưu sẽ hiện ở đây ngay.")+'</div>';
   pend.forEach(([id,c]) => { const bad = !isPass(c);
     h += '<div class="card'+(bad?" ng":"")+'"><div class="head">'+checkTitle(c)+'<span class="row">'+resultChip(c)+timingChip(c)+'</span></div><div class="marks">'+marks(c)+'</div>'
       +'<div class="sub">'+T("{name} kiểm lúc",{name:esc(c.checker)})+' <span class="mono">'+fmtTime(c.firstAt)+'</span> · '+T("quy định trước")+' <span class="mono">'+esc(c.due)+'</span>'+(S.apprs.get(id)?' · '+T("đã sửa sau lần duyệt trước"):'')+'</div>'
       +(c.note ? '<div>'+T("Ghi chú:")+' '+txt(c.note)+'</div>' : '')+photoBlock(id,c)
-      +(S.returning===id
+      +(ro ? '<div class="sub">'+T("Chờ tổ trưởng duyệt. Admin chỉ xem.")+'</div>' : S.returning===id
         ? '<label class="f">'+T("Lý do trả lại")+'<input type="text" data-ret="1" value="'+esc(S.returnNote)+'" placeholder="'+T("Ví dụ: kiểm lại điểm Giữa")+'"></label><div class="row"><button class="btn warn sm" data-act="retSend" data-id="'+esc(id)+'">'+T("Gửi trả lại")+'</button><button class="btn sm" data-act="retCancel">'+T("Huỷ")+'</button></div>'
         : (bad ? '<label class="f">'+T("Biện pháp đã thực hiện (bắt buộc)")+'<textarea data-action="'+esc(id)+'" placeholder="'+T("Ví dụ: ngưng máy, gọi bảo trì chỉnh cảm biến, kiểm lại toàn bộ hàng từ lần kiểm trước…")+'">'+esc(S.actions[id]||"")+'</textarea></label>' : '')
           +'<div class="row"><button class="btn pri sm" data-act="ok" data-id="'+esc(id)+'">'+T("Duyệt xác nhận")+'</button><button class="btn sm" data-act="ret" data-id="'+esc(id)+'">'+T("Trả lại")+'</button></div>')
@@ -637,6 +639,7 @@ $("#tab-approve").addEventListener("input", e => { if(e.target.dataset.ret) S.re
 $("#tab-approve").addEventListener("click", async e => {
   const b = e.target.closest("button"); if(!b || S.busy) return;
   if(b.dataset.photo){ b.disabled = true; await fetchPhoto(b.dataset.photo); return renderApprove(); }
+  if(S.me.role!=="leader") return;
   const act = b.dataset.act, id = b.dataset.id;
   if(act==="ret"){ S.returning = id; S.returnNote = ""; return renderApprove(); }
   if(act==="retCancel"){ S.returning = null; return renderApprove(); }
