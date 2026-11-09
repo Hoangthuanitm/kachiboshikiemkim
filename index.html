@@ -583,7 +583,7 @@ tr.kimrow td,.ptab tr.kimrow td.act{background:#fffaf0}
   <section id="tab-incident" hidden></section>
 </main>
 <div id="toast" hidden></div>
-<div class="ver">Phiên bản 09/11/2026 10:20</div>
+<div class="ver">Phiên bản 09/11/2026 10:30</div>
 
 <script>
 (function(){
@@ -674,6 +674,7 @@ const ROLE_LABEL = {director:"Giám đốc", admin:"Admin", manager:"Quản đ�
 
 /* Japanese UI text, keyed by the Vietnamese original */
 const JA = {
+"Mật khẩu tài khoản tổ trưởng":"班長アカウントのパスワード","Hãy nhập mật khẩu tài khoản tổ trưởng.":"班長アカウントのパスワードを入力してください。",
 "Xoá báo cáo số lượng kiểm":"検品数量報告の削除","Đây là dòng cuối cùng: cả báo cáo của ngày này, máy này sẽ bị xoá.":"最後の行です。この日・この設備の報告全体が削除されます。","Mã PIN / mật khẩu của {n}":"{n} のPIN／パスワード","Hãy nhập mã PIN / mật khẩu.":"PIN／パスワードを入力してください。","Không tìm thấy tài khoản của bạn.":"アカウントが見つかりません。","Sai mã PIN / mật khẩu.":"PIN／パスワードが違います。","Đã xoá dòng {p} ngày {d}.":"{d} の {p} を削除しました。","Chưa xoá được. Kiểm tra mạng rồi thử lại.":"削除できませんでした。通信を確認して再試行してください。",
 "Giám đốc":"社長","Giám đốc chỉ xem và theo dõi tình trạng duyệt, không duyệt hay trả lại phiếu.":"社長は承認状況の閲覧・確認のみで、承認や差し戻しはできません。",
 "Nhập bổ sung":"追加入力","Nhập bổ sung báo cáo số lượng kiểm":"検査数量報告の追加入力","Dùng khi tổ trưởng / công nhân quên nhập. Chọn ngày và máy: nếu ngày đó đã có báo cáo thì số liệu cũ hiện ra để sửa. Lần lưu được ghi tên quản đốc và giữ lại lịch sử.":"班長・作業者が入力し忘れた場合に使います。日付と設備を選ぶと、既存の報告があれば修正できます。保存者（工場長）と履歴が記録されます。","Ngày này đã có báo cáo của {n} lúc {t}. Lưu sẽ cập nhật báo cáo đó.":"この日は{n}の報告（{t}）があります。保存すると更新されます。","Ngày này máy này chưa có báo cáo số lượng kiểm.":"この日・この設備の検査数量報告はまだありません。","Lý do nhập bổ sung (nếu có)":"追加入力の理由（任意）","Ví dụ: tổ trưởng quên nhập, số liệu theo sổ tay":"例：班長の入力漏れ、手書き記録より","Ngày không hợp lệ.":"日付が正しくありません。","Đã lưu báo cáo số lượng kiểm ngày {d}.":"{d} の検査数量報告を保存しました。","QĐ nhập bổ sung":"工場長が追加入力",
@@ -1407,10 +1408,19 @@ function koPanel(){ const f = koForm(), d = (S.kouts||new Map()).get(f.key), mid
     +(sl.length ? '<div class="row" style="flex-wrap:wrap;gap:6px;margin:8px 0"><span class="chip plain">'+T("Tổng thực tế:")+' <b>'+qtyText(tq)+'</b></span><span class="chip '+(tk ? "ng" : "ok")+'">'+T("Phát hiện kim:")+' <b>'+tk+' '+T("đôi")+'</b></span><span class="chip plain">'+T("Tỷ lệ:")+' <b>'+kimRate(tq, tk)+'</b></span>'+(d.by ? '<span class="sub">'+T("Lưu lần cuối: {n} lúc {t}",{n:esc(d.by), t:fmtTime(d.at)})+'</span>' : '')+'</div>' : '')
     +'<div class="kotable"><div class="korow kohead"><div>'+T("Tên sản phẩm")+'</div><div>'+T("Mã hàng")+'</div><div>'+T("Số lượng thực tế")+'</div><div>'+T("Số lượng phát hiện kim")+'</div><div></div></div>'+f.lines.map(row).join("")+'</div>'
     +'<div class="row"><button type="button" class="btn" data-koadd="1">+ '+T("Thêm sản phẩm")+'</button></div>'
-    +'<div class="row kosave"><select data-kof="person" aria-label="'+T("Người nhập")+'"><option value="">'+T("Người nhập")+'</option>'+workerList().map(([id,a]) => '<option value="'+esc(id)+'"'+(id===f.person ? " selected" : "")+'>'+esc(a.name)+'</option>').join("")+'</select>'
-    +'<input type="password" data-kof="pin" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" value="'+esc(f.pin)+'" placeholder="PIN" aria-label="'+T("Mã PIN")+'" style="width:96px">'
+    +'<div class="row kosave"><select data-kof="person" aria-label="'+T("Người nhập")+'"><option value="">'+T("Người nhập")+'</option>'
+      +[["Tổ trưởng", koLeaders()], ["Công nhân", workerList()]].filter(g => g[1].length).map(g => '<optgroup label="'+T(g[0])+'">'+g[1].map(([id,a]) => '<option value="'+esc(id)+'"'+(id===f.person ? " selected" : "")+'>'+esc(a.name)+'</option>').join("")+'</optgroup>').join("")+'</select>'
+    +(koIsLead(f.person) ? '<input type="password" data-kof="pin" autocomplete="off" value="'+esc(f.pin)+'" placeholder="'+T("Mật khẩu")+'" aria-label="'+T("Mật khẩu tài khoản tổ trưởng")+'" style="width:150px">'
+      : '<input type="password" data-kof="pin" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" value="'+esc(f.pin)+'" placeholder="PIN" aria-label="'+T("Mã PIN")+'" style="width:96px">')
     +'<button type="button" class="btn pri" id="koSave">'+T(sl.length ? "Lưu cập nhật" : "Lưu báo cáo")+'</button>'+(f.dirty ? '<span class="sub ngt">'+T("Có thay đổi chưa lưu")+'</span>' : '')+'</div>'
     +'<div class="alert" id="koErr" hidden></div></div>'; }
+/* Người nhập báo cáo số lượng kiểm: tổ trưởng phụ trách máy này (xác nhận bằng mật khẩu tài khoản) và công nhân (mã PIN 4 số) */
+const koLeaders = () => apprLeaders(devMid());
+const koIsLead = id => { const a = id && S.accounts.get(id); return !!a && a.role==="leader"; };
+async function koPwOk(a, pw){ if(Date.now()<S.opLock) return "lock";
+  let ok = false; try{ ok = a.pin ? pw===a.pin : !!a.salt && !!a.hash && (await hashPw(a.salt, pw))===a.hash; }catch(e){}
+  if(!ok){ S.opFail++; if(S.opFail>=5){ S.opFail = 0; S.opLock = Date.now()+60000; } } else S.opFail = 0;
+  return ok; }
 function koErr(m){ toast(m); const el = $("#koErr"); if(el){ el.textContent = m; el.hidden = false; } }
 async function koSave(){ if(S.busy || dayChanged()) return; const f = koForm(), mid = devMid(), m = S.cfg.machines.find(x => x.id===mid), prev = (S.kouts||new Map()).get(f.key);
   const ls = f.lines.filter(l => l.code || l.product || l.qta || l.qdoi || l.kim);
@@ -1422,8 +1432,9 @@ async function koSave(){ if(S.busy || dayChanged()) return; const f = koForm(), 
     if(!koQty(l)) return koErr(T("Hãy nhập số lượng thực tế cho {p}.",{p:l.product}));
     if(koNum(l.kim) > koQty(l)) return koErr(T("Số phát hiện kim của {p} lớn hơn số lượng thực tế.",{p:l.product})); }
   const a = f.person && S.accounts.get(f.person); if(!a) return koErr(T("Hãy chọn tên người nhập."));
-  const pin = String(f.pin||"").replace(/\D/g,""); if(pin.length!==4) return koErr(T("Mã PIN gồm đúng 4 chữ số."));
-  const ok = await pinOk(a, pin); if(ok==="lock") return koErr(T("Nhập sai nhiều lần. Chờ 1 phút rồi thử lại.")); if(!ok){ f.pin = ""; renderCheck(); return koErr(T("Sai mã PIN.")); }
+  const lead = a.role==="leader", pin = lead ? String(f.pin||"").trim() : String(f.pin||"").replace(/\D/g,"");
+  if(lead ? !pin : pin.length!==4) return koErr(T(lead ? "Hãy nhập mật khẩu tài khoản tổ trưởng." : "Mã PIN gồm đúng 4 chữ số."));
+  const ok = lead ? await koPwOk(a, pin) : await pinOk(a, pin); if(ok==="lock") return koErr(T("Nhập sai nhiều lần. Chờ 1 phút rồi thử lại.")); if(!ok){ f.pin = ""; renderCheck(); return koErr(T(lead ? "Sai mật khẩu." : "Sai mã PIN.")); }
   const now = new Date().toISOString(), lines = ls.map(l => ({id:l.id, code:String(l.code).trim(), product:String(l.product).trim(), qty:koQty(l), kim:koNum(l.kim)}));
   const doc = {date:S.today, month:S.today.slice(0,7), machineId:m.id, machineName:m.name, lines:lines, qtyTotal:lines.reduce((x,l) => x+l.qty, 0), kimTotal:lines.reduce((x,l) => x+l.kim, 0), by:a.name, byId:f.person, deviceId:S.me.id, at:now, firstAt:prev ? prev.firstAt||prev.at : now,
     hist:prev ? (prev.hist||[]).concat([{at:prev.at, by:prev.by, qtyTotal:prev.qtyTotal, kimTotal:prev.kimTotal}]).slice(-30) : []};
@@ -1432,10 +1443,11 @@ async function koSave(){ if(S.busy || dayChanged()) return; const f = koForm(), 
   catch(err){ koErr(T(err && err.code==="permission-denied" ? "Firestore từ chối quyền ghi. Kiểm tra Security Rules." : "Chưa lưu được. Kiểm tra mạng rồi bấm lưu lại.")); }
   S.busy = false; renderCheck(); }
 $("#tab-check").addEventListener("input", e => { const k = e.target.dataset && e.target.dataset.kof; if(!k || !S.ko) return;
-  if(["qta","qdoi","kim","pin"].includes(k)) e.target.value = e.target.value.replace(/\D/g,"").slice(0, k==="pin" ? 4 : 7);
+  if(["qta","qdoi","kim"].includes(k) || (k==="pin" && !koIsLead(S.ko.person))) e.target.value = e.target.value.replace(/\D/g,"").slice(0, k==="pin" ? 4 : 7);
   const i = e.target.dataset.ko; if(i!==undefined){ S.ko.lines[+i][k] = e.target.value; S.ko.dirty = true; } else S.ko[k] = e.target.value; });
 $("#tab-check").addEventListener("change", e => { const k = e.target.dataset && e.target.dataset.kof; if(!k || !S.ko) return; const i = e.target.dataset.ko;
-  if(i!==undefined){ S.ko.lines[+i][k] = e.target.value; S.ko.dirty = true; } else S.ko[k] = e.target.value; });
+  if(i!==undefined){ S.ko.lines[+i][k] = e.target.value; S.ko.dirty = true; } else { S.ko[k] = e.target.value; const pe = document.querySelector('[data-kof="pin"]');
+    if(k==="person" && pe && (pe.inputMode!=="numeric")!==koIsLead(S.ko.person)){ S.ko.pin = ""; renderCheck(); const x = document.querySelector('[data-kof="pin"]'); if(x) x.focus(); } } });
 $("#tab-check").addEventListener("click", e => { const b = e.target.closest("button"); if(!b || !S.ko) return;
   if(b.id==="koSave") return koSave();
   if(b.dataset.koadd){ S.ko.lines.push({id:"l"+Date.now().toString(36), code:"", product:"", qta:"", qdoi:"", kim:"", saved:false}); S.ko.dirty = true; return renderCheck(); }
