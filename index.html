@@ -555,6 +555,7 @@ tr.kimrow td,.ptab tr.kimrow td.act{background:#fffaf0}
 .dapform select,.dapform input{width:100%}
 .dapbtns{display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:8px;margin-top:4px}
 .dapbtns .btn{min-height:46px;font-size:16px}
+.daphead.del{background:#bb261e}.dapbtns.two{grid-template-columns:1fr 1.4fr}
 </style>
 
 </head>
@@ -582,7 +583,7 @@ tr.kimrow td,.ptab tr.kimrow td.act{background:#fffaf0}
   <section id="tab-incident" hidden></section>
 </main>
 <div id="toast" hidden></div>
-<div class="ver">Phiên bản 06/11/2026 07:50</div>
+<div class="ver">Phiên bản 09/11/2026 10:20</div>
 
 <script>
 (function(){
@@ -673,6 +674,7 @@ const ROLE_LABEL = {director:"Giám đốc", admin:"Admin", manager:"Quản đ�
 
 /* Japanese UI text, keyed by the Vietnamese original */
 const JA = {
+"Xoá báo cáo số lượng kiểm":"検品数量報告の削除","Đây là dòng cuối cùng: cả báo cáo của ngày này, máy này sẽ bị xoá.":"最後の行です。この日・この設備の報告全体が削除されます。","Mã PIN / mật khẩu của {n}":"{n} のPIN／パスワード","Hãy nhập mã PIN / mật khẩu.":"PIN／パスワードを入力してください。","Không tìm thấy tài khoản của bạn.":"アカウントが見つかりません。","Sai mã PIN / mật khẩu.":"PIN／パスワードが違います。","Đã xoá dòng {p} ngày {d}.":"{d} の {p} を削除しました。","Chưa xoá được. Kiểm tra mạng rồi thử lại.":"削除できませんでした。通信を確認して再試行してください。",
 "Giám đốc":"社長","Giám đốc chỉ xem và theo dõi tình trạng duyệt, không duyệt hay trả lại phiếu.":"社長は承認状況の閲覧・確認のみで、承認や差し戻しはできません。",
 "Nhập bổ sung":"追加入力","Nhập bổ sung báo cáo số lượng kiểm":"検査数量報告の追加入力","Dùng khi tổ trưởng / công nhân quên nhập. Chọn ngày và máy: nếu ngày đó đã có báo cáo thì số liệu cũ hiện ra để sửa. Lần lưu được ghi tên quản đốc và giữ lại lịch sử.":"班長・作業者が入力し忘れた場合に使います。日付と設備を選ぶと、既存の報告があれば修正できます。保存者（工場長）と履歴が記録されます。","Ngày này đã có báo cáo của {n} lúc {t}. Lưu sẽ cập nhật báo cáo đó.":"この日は{n}の報告（{t}）があります。保存すると更新されます。","Ngày này máy này chưa có báo cáo số lượng kiểm.":"この日・この設備の検査数量報告はまだありません。","Lý do nhập bổ sung (nếu có)":"追加入力の理由（任意）","Ví dụ: tổ trưởng quên nhập, số liệu theo sổ tay":"例：班長の入力漏れ、手書き記録より","Ngày không hợp lệ.":"日付が正しくありません。","Đã lưu báo cáo số lượng kiểm ngày {d}.":"{d} の検査数量報告を保存しました。","QĐ nhập bổ sung":"工場長が追加入力",
 "Công nhân chọn mã hàng từ danh sách này ở báo cáo phát hiện kim và báo cáo số lượng kiểm. Khi danh sách trống, công nhân tự gõ mã hàng.":"作業者は検針報告・検査数量報告でこのリストから品番を選びます。リストが空の場合は品番を手入力します。","Công nhân chọn tên sản phẩm từ danh sách này ở báo cáo phát hiện kim và báo cáo số lượng kiểm.":"作業者は検針報告・検査数量報告でこのリストから製品名を選びます。","Mã hàng (mỗi dòng 1 mã)":"品番（1行に1件）","Tên sản phẩm (mỗi dòng 1 mục)":"製品名（1行に1件）","Lưu danh sách tên sản phẩm":"製品名リストを保存","Nạp danh sách sản phẩm chuẩn (thiếu {n} mục)":"標準製品リストを読込（不足 {n} 件）","Đã lưu danh sách tên sản phẩm ({n} mục).":"製品名リストを保存しました（{n} 件）。","Đã nạp danh sách sản phẩm chuẩn ({n} mục).":"標準製品リストを読み込みました（{n} 件）。","Hãy chọn tên sản phẩm cho từng dòng.":"各行の製品名を選んでください。","Theo mã hàng":"品番別",
@@ -2459,7 +2461,7 @@ function loadReport(){
   if(r.sub===ym) return;
   (r.unsubs||[]).forEach(u => { try{ u(); }catch(e){} });
   r.sub = ym; r.loaded = false; r.gotC = r.gotA = false; r.daily = []; r.kouts = [];
-  const done = () => { if(r.sub!==ym) return; r.loaded = r.gotC && r.gotA; if(S.me && S.tab==="report" && !typingIn("#kmBox")) renderReport(); };
+  const done = () => { if(r.sub!==ym) return; r.loaded = r.gotC && r.gotA; if(S.me && S.tab==="report" && !typingIn("#kmBox") && !typingIn("#kdModal")) renderReport(); };
   const fail = () => { if(r.sub===ym){ r.sub = null; toast(T("Chưa tải được dữ liệu tháng. Thử lại.")); } };
   r.unsubs = [
     S.db.collection("checks").where("month","==",ym).limit(1000).onSnapshot(q => { if(r.sub!==ym) return; const all = q.docs.map(d => Object.assign({id:d.id}, d.data())).sort((x,y) => x.id<y.id?-1:1); r.checks = all.filter(c => !isKim(c)); r.kim = all.filter(isKim); r.gotC = true; done(); }, fail),
@@ -2555,6 +2557,47 @@ $("#tab-report").addEventListener("click", e => { const b = e.target.closest("bu
   if(b.dataset.kmdel!==undefined){ if(S.kom.lines.length<2) return; S.kom.lines.splice(+b.dataset.kmdel, 1); return renderReport(); }
   if(b.dataset.kmx){ S.kom = null; return renderReport(); }
   if(b.dataset.kmsave) return kmSave(); });
+/* Quản đốc / admin xoá 1 dòng báo cáo số lượng kiểm: bấm ✕ → popup nhập mã PIN / mật khẩu tài khoản của chính mình */
+const kdFind = key => { const [id, lid] = String(key).split("|"), d = (S.report.kouts||[]).find(x => x.id===id); return d ? {id:id, lid:lid, d:d, l:(d.lines||[]).find(x => x.id===lid)} : null; };
+function kdModal(){ const k = S.kdel, x = k && kdFind(k.key); if(!x || !x.l) return '';
+  const last = (x.d.lines||[]).length<2;
+  return '<div class="dapmodal" id="kdModal" role="dialog" aria-modal="true"><div class="dapbox">'
+    +'<div class="daphead del"><b>'+T("Xoá báo cáo số lượng kiểm")+'</b><button type="button" class="dapclose" data-kdx="1" aria-label="'+T("Đóng")+'">✕</button></div>'
+    +'<div class="dapsum"><div class="dapline"><span class="mono">'+fmtDate(x.d.date)+'</span> · '+esc(mName(x.d.machineName))+'</div>'
+    +'<div class="dapline"><b>'+esc(x.l.code||"—")+'</b> '+esc(x.l.product||"")+'</div>'
+    +'<div class="dapline">'+T("Số lượng thực tế")+': <b class="mono">'+qtyText(x.l.qty||0)+'</b> · '+T("Phát hiện kim")+': <b class="mono">'+(x.l.kim||0)+' '+T("đôi")+'</b></div>'
+    +'<div class="dapline sub">'+T("Người nhập")+': '+esc(x.d.by||"")+' · '+fmtDT(x.d.at)+'</div>'
+    +(last ? '<div class="dapline ngt">'+T("Đây là dòng cuối cùng: cả báo cáo của ngày này, máy này sẽ bị xoá.")+'</div>' : '')+'</div>'
+    +'<div class="dapform"><label class="f">'+T("Mã PIN / mật khẩu của {n}",{n:esc(S.me.name||"")})+'<input type="password" id="kdPw" autocomplete="off" value="'+esc(k.pw||"")+'"></label>'
+    +'<div class="alert" id="kdErr"'+(k.err ? '' : ' hidden')+'>'+esc(k.err||"")+'</div>'
+    +'<div class="dapbtns two"><button type="button" class="btn" data-kdx="1">'+T("Huỷ")+'</button><button type="button" class="btn warn" data-kdgo="1">✕ '+T("Xoá")+'</button></div></div></div></div>'; }
+async function kdGo(){ const k = S.kdel, x = k && kdFind(k.key); if(!x || !x.l || S.busy || !canKm()) return;
+  const err = m => { k.err = m; const el = $("#kdErr"); if(el){ el.textContent = m; el.hidden = false; } else renderReport(); };
+  const pw = String(($("#kdPw") || {}).value || k.pw || "").trim(), a = S.accounts.get(S.me.id);
+  if(!pw) return err(T("Hãy nhập mã PIN / mật khẩu."));
+  if(!a) return err(T("Không tìm thấy tài khoản của bạn."));
+  if(Date.now()<S.opLock) return err(T("Nhập sai nhiều lần. Chờ 1 phút rồi thử lại."));
+  let ok = false; try{ ok = a.pin ? pw===a.pin : !!a.salt && !!a.hash && (await hashPw(a.salt, pw))===a.hash; }catch(e){}
+  if(!ok){ S.opFail++; if(S.opFail>=5){ S.opFail = 0; S.opLock = Date.now()+60000; } k.pw = ""; const el = $("#kdPw"); if(el){ el.value = ""; el.focus(); } return err(T("Sai mã PIN / mật khẩu.")); }
+  S.opFail = 0;
+  const d = x.d, lines = (d.lines||[]).filter(l => l.id!==x.lid), now = new Date().toISOString(), r = S.report;
+  S.busy = true;
+  try{
+    if(!lines.length){ await S.db.doc("kout/"+x.id).delete(); r.kouts = (r.kouts||[]).filter(o => o.id!==x.id); if(S.kouts) S.kouts.delete(x.id); }
+    else { const nd = Object.assign({}, d, {lines:lines, qtyTotal:lines.reduce((a,l) => a+(l.qty||0), 0), kimTotal:lines.reduce((a,l) => a+(l.kim||0), 0), at:now,
+        hist:(d.hist||[]).concat([{at:d.at, by:d.by, qtyTotal:d.qtyTotal, kimTotal:d.kimTotal, act:"delline", line:[x.l.code||"", x.l.product||"", x.l.qty||0, x.l.kim||0], delBy:S.me.name, delAt:now}]).slice(-30)});
+      delete nd.id; await S.db.doc("kout/"+x.id).set(nd); r.kouts = (r.kouts||[]).map(o => o.id===x.id ? Object.assign({id:x.id}, nd) : o); if(S.kouts && S.kouts.has(x.id)) S.kouts.set(x.id, nd); }
+    S.kdel = null; if(document.activeElement) document.activeElement.blur(); toast(T("Đã xoá dòng {p} ngày {d}.",{p:((x.l.code||"")+" "+(x.l.product||"")).trim(), d:fmtDate(d.date)})); }
+  catch(e){ S.busy = false; return err(T(e && e.code==="permission-denied" ? "Firestore từ chối quyền ghi. Kiểm tra Security Rules." : "Chưa xoá được. Kiểm tra mạng rồi thử lại.")); }
+  S.busy = false; renderReport(); }
+$("#tab-report").addEventListener("click", e => {
+  if(e.target.id==="kdModal"){ S.kdel = null; return renderReport(); }
+  const b = e.target.closest("button"); if(!b) return;
+  if(b.dataset.kdel && canKm()){ S.kdel = {key:b.dataset.kdel, pw:"", err:""}; renderReport(); setTimeout(() => { const i = $("#kdPw"); if(i) i.focus(); }, 30); return; }
+  if(b.dataset.kdx){ S.kdel = null; return renderReport(); }
+  if(b.dataset.kdgo) return kdGo(); });
+$("#tab-report").addEventListener("input", e => { if(e.target.id==="kdPw" && S.kdel) S.kdel.pw = e.target.value; });
+$("#tab-report").addEventListener("keydown", e => { if(e.target.id==="kdPw" && e.key==="Enter") kdGo(); });
 function koReportPanel(r){ const ls = koLines(r.kouts), tq = ls.reduce((a,x) => a+(x.l.qty||0), 0), tk = ls.reduce((a,x) => a+(x.l.kim||0), 0);
   let h = '<div class="panel"><div class="row between"><h2>'+T("Sản lượng và phát hiện kim")+'</h2>'+(canKm() && !S.kom ? '<button type="button" class="btn sm" data-kmopen="">+ '+T("Nhập bổ sung")+'</button>' : '')+'</div>'+(canKm() ? kmForm() : '');
   if(!ls.length) return h+'<div class="notice">'+T("Tháng này chưa có báo cáo số lượng kiểm nào.")+'</div></div>';
@@ -2565,7 +2608,7 @@ function koReportPanel(r){ const ls = koLines(r.kouts), tq = ls.reduce((a,x) => 
     +'<tr class="secrow"><td>'+T("Tổng")+'</td><td class="mono">'+qtyText(rows.reduce((a,[,o]) => a+o.q, 0))+'</td><td class="mono"><b>'+rows.reduce((a,[,o]) => a+o.k, 0)+'</b></td><td><b class="mono">'+kimRate(tq, tk)+'</b></td></tr></table></div></div>';
   h += '<div class="pareto">'+grp("Theo mã hàng", koGroup(r.kouts, x => x.l.code))+grp("Theo sản phẩm", koGroup(r.kouts, x => x.l.product))+grp("Theo máy", koGroup(r.kouts, x => mName(x.d.machineName)))+'</div>';
   h += '<h3>'+T("Chi tiết theo ngày")+'</h3><div class="scroll"><table><tr><th>'+T("Ngày")+'</th><th>'+T("Máy")+'</th><th>'+T("Mã hàng")+'</th><th>'+T("Tên sản phẩm")+'</th><th>'+T("Số lượng thực tế")+'</th><th>'+T("Phát hiện kim (đôi)")+'</th><th>'+T("Tỷ lệ")+'</th><th>'+T("Người nhập")+'</th><th>'+T("Cập nhật")+'</th>'+(canKm() ? '<th></th>' : '')+'</tr>'
-    +ls.slice().reverse().map(({d,l}) => '<tr><td class="d">'+fmtDate(d.date).slice(0,5)+'</td><td>'+esc(mName(d.machineName))+'</td><td><b>'+esc(l.code||"—")+'</b></td><td>'+esc(l.product||"")+'</td><td class="mono">'+qtyText(l.qty||0)+'</td><td class="mono'+(l.kim ? " ngt" : "")+'"><b>'+(l.kim||0)+'</b></td><td class="mono">'+kimRate(l.qty, l.kim||0)+'</td><td>'+esc(d.by||"")+(d.byMgr ? ' <span class="chip mgr" title="'+esc(d.mgrNote||"")+'">'+T("QĐ nhập bổ sung")+'</span>' : '')+'</td><td class="mono">'+fmtTime(d.at)+'</td>'+(canKm() ? '<td><button type="button" class="btn sm" data-kmopen="'+esc(d.date+"|"+d.machineId)+'">'+T("Sửa")+'</button></td>' : '')+'</tr>').join("")+'</table></div>';
+    +ls.slice().reverse().map(({d,l}) => '<tr><td class="d">'+fmtDate(d.date).slice(0,5)+'</td><td>'+esc(mName(d.machineName))+'</td><td><b>'+esc(l.code||"—")+'</b></td><td>'+esc(l.product||"")+'</td><td class="mono">'+qtyText(l.qty||0)+'</td><td class="mono'+(l.kim ? " ngt" : "")+'"><b>'+(l.kim||0)+'</b></td><td class="mono">'+kimRate(l.qty, l.kim||0)+'</td><td>'+esc(d.by||"")+(d.byMgr ? ' <span class="chip mgr" title="'+esc(d.mgrNote||"")+'">'+T("QĐ nhập bổ sung")+'</span>' : '')+'</td><td class="mono">'+fmtTime(d.at)+'</td>'+(canKm() ? '<td class="nw"><button type="button" class="btn sm" data-kmopen="'+esc(d.date+"|"+d.machineId)+'">'+T("Sửa")+'</button> <button type="button" class="btn sm warn" data-kdel="'+esc(d.id+"|"+l.id)+'" aria-label="'+T("Xoá dòng")+'" title="'+T("Xoá dòng")+'">✕</button></td>' : '')+'</tr>').join("")+'</table></div>';
   return h+'</div>'; }
 function b2All(list){ return qtyText(list.reduce((a,d) => a+(d.b2Total||0), 0)); }
 function reportStats(){
@@ -2623,7 +2666,7 @@ function renderReport(){
           +'<td>'+esc(c.checker||"")+'</td><td class="wrap">'+(c.note ? txt(c.note) : '<span class="sub">—</span>')+'</td><td>'+ph+'</td><td class="nw">'+tt+'</td>'
           +'<td class="wrap">'+(st==="approved" && a.action ? txt(a.action) : st==="returned" && a.note ? '<span class="ngt">'+txt(a.note)+'</span>' : '<span class="sub">—</span>')+'</td><td class="nw">'+qd+'</td></tr>'; }).join("")
       +'</table></div></div>'; }
-  box.innerHTML = h;
+  box.innerHTML = h+(S.kdel ? kdModal() : '');
 }
 function onMonth(e){ const v = e.target.value; if(e.target.id!=="month" || !/^\d{4}-\d{2}$/.test(v) || v===S.report.month) return;
   S.report.month = v; S.report.loaded = false; S.report.checks = []; S.report.apprs = new Map(); loadReport();
