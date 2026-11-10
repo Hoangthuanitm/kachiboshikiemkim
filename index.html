@@ -418,6 +418,11 @@ select.asg.set{color:var(--ink);border-color:var(--accent);background:var(--acce
 .korow{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1.3fr) minmax(0,0.9fr) 52px;gap:8px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-left:4px solid var(--line);border-radius:8px;background:var(--surface)}
 .kmbox{border:1.5px dashed var(--wait);border-radius:10px;padding:12px;margin:10px 0;background:var(--surface)}.kmbox .kmhead{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}.kmbox .kmhead .f{min-width:150px}
 .chip.mgr{background:#fff4d6;color:#8a5a00;border:1px solid #f0d9a0}
+.bl{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:8px;align-items:center;padding:6px 10px;border:1px solid var(--line);border-radius:8px}
+.bl>div{min-width:0;overflow-wrap:anywhere}.bl input{min-width:0;width:100%}.list.bil{display:grid;gap:6px}
+.bl.bhead{border:0;padding:0 10px;font-size:12.5px;font-weight:600;color:var(--muted)}.bnew input{min-width:0}
+.mrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+@media (max-width:560px){.bl{grid-template-columns:minmax(0,1fr) auto}.bl input{grid-column:1/-1;grid-row:2}.bl.bhead>div:nth-child(2){display:none}.bnew{flex-wrap:wrap}.mrow{grid-template-columns:1fr}}
 .korow .ml{display:none}.korow.saved{border-left-color:var(--ok)}.korow.new{border-left-color:var(--wait)}
 .korow.kohead{border:0;padding:0 10px 0 14px;background:none;font-size:12px;color:var(--muted);font-weight:600}
 .korow select,.korow input{width:100%;min-width:0;padding:8px;min-height:44px;font-size:16px}
@@ -583,7 +588,7 @@ tr.kimrow td,.ptab tr.kimrow td.act{background:#fffaf0}
   <section id="tab-incident" hidden></section>
 </main>
 <div id="toast" hidden></div>
-<div class="ver">Phiên bản 09/11/2026 10:30</div>
+<div class="ver">Phiên bản 10/11/2026 08:00</div>
 
 <script>
 (function(){
@@ -674,6 +679,8 @@ const ROLE_LABEL = {director:"Giám đốc", admin:"Admin", manager:"Quản đ�
 
 /* Japanese UI text, keyed by the Vietnamese original */
 const JA = {
+"Tên tiếng Việt":"ベトナム語名","Tên máy tiếng Việt":"機械名（ベトナム語）","Tên máy tiếng Nhật":"機械名（日本語）",
+"Khi app chuyển sang tiếng Nhật, tên ở cột tiếng Nhật được hiện thay cho tên tiếng Việt.":"アプリを日本語に切り替えると、日本語の列の名前がベトナム語名の代わりに表示されます。","Tiếng Nhật":"日本語","Tên tiếng Nhật":"日本語名","Lưu tên tiếng Nhật":"日本語名を保存","Tên tiếng Việt, ví dụ: Cotton nam":"ベトナム語名（例：Cotton nam）","Tên tiếng Nhật, ví dụ: 検針機 2号機":"日本語名（例：検針機 2号機）","Không có gì thay đổi.":"変更はありません。",
 "Mật khẩu tài khoản tổ trưởng":"班長アカウントのパスワード","Hãy nhập mật khẩu tài khoản tổ trưởng.":"班長アカウントのパスワードを入力してください。",
 "Xoá báo cáo số lượng kiểm":"検品数量報告の削除","Đây là dòng cuối cùng: cả báo cáo của ngày này, máy này sẽ bị xoá.":"最後の行です。この日・この設備の報告全体が削除されます。","Mã PIN / mật khẩu của {n}":"{n} のPIN／パスワード","Hãy nhập mã PIN / mật khẩu.":"PIN／パスワードを入力してください。","Không tìm thấy tài khoản của bạn.":"アカウントが見つかりません。","Sai mã PIN / mật khẩu.":"PIN／パスワードが違います。","Đã xoá dòng {p} ngày {d}.":"{d} の {p} を削除しました。","Chưa xoá được. Kiểm tra mạng rồi thử lại.":"削除できませんでした。通信を確認して再試行してください。",
 "Giám đốc":"社長","Giám đốc chỉ xem và theo dõi tình trạng duyệt, không duyệt hay trả lại phiếu.":"社長は承認状況の閲覧・確認のみで、承認や差し戻しはできません。",
@@ -891,7 +898,7 @@ const S = {
   today: ymd(new Date()),
   slot:{shift: new Date().getHours()<12 ? "S" : "C", machine:"m1"},
   form:{vals:{}, nums:{temp:"", temp2:"", speed:""}, product:"", note:"", photo:null, dirty:false},
-  op:null, opPick:null, opChecking:false, pinEdit:false, sheetUrl:"", opAt:0, opFail:0, opLock:0, dmachine:"", products:[], codes:[], defects:[], daily:new Map(), dapprs:new Map(), fapprs:new Map(), steps:new Map(), sched:new Map(), incs:new Map(), dform:{key:"", ta:"", doi:"", causes:[], other:"", dirty:false},
+  op:null, opPick:null, opChecking:false, pinEdit:false, sheetUrl:"", opAt:0, opFail:0, opLock:0, dmachine:"", products:[], codes:[], defects:[], listJa:{products:{}}, daily:new Map(), dapprs:new Map(), fapprs:new Map(), steps:new Map(), sched:new Map(), incs:new Map(), dform:{key:"", ta:"", doi:"", causes:[], other:"", dirty:false},
   returning:null, returnNote:"", actions:{}, editAcc:null, busy:false,
   assign:new Map(), off:new Set(), week:"", qfWorker:"", qfStage:"", asgMachine:"",
   sform:{key:"", sampleQ:"", gloss:"", note:"", photo:null, dirty:false}, stepAct:null,
@@ -903,7 +910,41 @@ function T(s, v){ let o = S.lang==="ja" && JA[s] ? JA[s] : s; if(v) for(const k 
 const shiftL = s => T(({S:"Sáng", C:"Chiều", K:"Phát hiện kim"})[s] || s);
 const roleL = r => T(ROLE_LABEL[r]);
 const dowOf = s => { const p = s.split("-").map(Number); return DOW[S.lang][new Date(p[0],p[1]-1,p[2]).getDay()]; };
-const mName = n => n;
+/* Tên tiếng Nhật: máy (trường nameJa trong cài đặt máy) và tên sản phẩm (mảng "ja" song song với "list" trong config/products).
+   Khi app ở tiếng Nhật, tên tiếng Nhật được hiện thay tên tiếng Việt; ô tiếng Nhật để trống thì dùng bảng mặc định / giữ tên gốc. */
+const MACHINE_JA = {"Máy kiểm kim":"検針機"};
+const mJa = m => (m && m.nameJa || "").trim() || MACHINE_JA[m && m.name] || "";
+const mName = n => { if(!n || S.lang!=="ja") return n||""; const m = (S.cfg.machines||[]).find(x => x.name===n); return (m && mJa(m)) || MACHINE_JA[n] || String(n).replace(/^Máy kiểm kim/i, "検針機"); };
+const LIST_JA = {
+  "Cotton Nam":"コットン 紳士", "Cotton nữ":"コットン 婦人", "Cotton trẻ em":"コットン 子供",
+  "Cotton fit nam PKT":"コットンフィット 紳士 PKT", "Cotton fit nữ PKT":"コットンフィット 婦人 PKT",
+  "Cotton fit nam Hamure":"コットンフィット 紳士 Hamure", "Cotton fit nữ Hamure":"コットンフィット 婦人 Hamure", "Cotton fit trẻ em Hamure":"コットンフィット 子供 Hamure",
+  "Cotton cắt 5 ngón nam":"コットン 5本指切り 紳士", "Cotton cắt 3 ngón nam":"コットン 3本指切り 紳士", "Cotton cắt 2 ngón nam":"コットン 2本指切り 紳士",
+  "Cotton cắt 5 ngón nữ":"コットン 5本指切り 婦人", "Cotton cắt 3 ngón nữ":"コットン 3本指切り 婦人", "Cotton cắt 2 ngón nữ":"コットン 2本指切り 婦人",
+  "Kurumi nam đen":"Kurumi 紳士 黒", "Kurumi nữ đen":"Kurumi 婦人 黒",
+  "10G wooly":"10G ウーリー", "10G kombow nam trắng":"10G 混紡 紳士 白", "10G kombow nữ trắng":"10G 混紡 婦人 白",
+  "Tc jonshin nam":"TC Jonshin 紳士", "Tc jonshin nữ":"TC Jonshin 婦人",
+  "Kinari L":"生成り L", "Kinari M":"生成り M", "Kinari S":"生成り S", "Kinari 2S":"生成り 2S", "Kinari 3S":"生成り 3S",
+  "Captain L":"キャプテン L", "Captain M":"キャプテン M",
+  "Poly fit nam binibotsu":"ポリフィット 紳士 ビニボツ", "Poly fit nữ binibotsu":"ポリフィット 婦人 ビニボツ",
+  "Grantex nam":"グランテックス 紳士", "Grantex nữ":"グランテックス 婦人",
+  "Poly nam Jal":"ポリ 紳士 JAL", "Poly nữ Jal":"ポリ 婦人 JAL", "Poly 2L":"ポリ 2L",
+  "Poly nam":"ポリ 紳士", "Poly nữ":"ポリ 婦人", "Poly trẻ em":"ポリ 子供", "Poly nữ Trusco":"ポリ 婦人 トラスコ",
+  "Tc kombow":"TC混紡", "8G poly fit nam hamure":"8G ポリフィット 紳士 Hamure", "8G poly fit nữ hamure":"8G ポリフィット 婦人 Hamure",
+  "15G Catch Line L":"15G キャッチライン L", "15G Catch Line M":"15G キャッチライン M", "15G Catch Line S":"15G キャッチライン S",
+  "15G Mr Catch L đỏ":"15G ミスターキャッチ L 赤", "15G Mr Catch L đen":"15G ミスターキャッチ L 黒",
+  "15G Mr Catch M đỏ":"15G ミスターキャッチ M 赤", "15G Mr Catch M đen":"15G ミスターキャッチ M 黒",
+  "15G Mr Catch S đỏ":"15G ミスターキャッチ S 赤", "15G Mr Catch S đen":"15G ミスターキャッチ S 黒",
+  "15G Mr Catch L đỏ lộn":"15G ミスターキャッチ L 赤 裏返し", "15G Mr Catch L đen lộn":"15G ミスターキャッチ L 黒 裏返し",
+  "15G Mr Catch M đỏ lộn":"15G ミスターキャッチ M 赤 裏返し", "15G Mr Catch M đen lộn":"15G ミスターキャッチ M 黒 裏返し",
+  "15G Mr Catch S đỏ lộn":"15G ミスターキャッチ S 赤 裏返し", "15G Mr Catch S đen lộn":"15G ミスターキャッチ S 黒 裏返し",
+  "Cotton touch nam":"コットンタッチ 紳士", "Cotton touch nữ":"コットンタッチ 婦人", "Kurumi pet nam":"Kurumi PET 紳士", "Kurumi pet nữ":"Kurumi PET 婦人",
+  "Lỗi keo PVC":"PVC（ゾル）不良", "Lỗi in hư chồng khuôn":"プリント不良（型ずれ・二重プリント）", "Lỗi sợi dơ":"糸汚れ",
+  "Lỗi rách lủng":"破れ・穴あき", "Lỗi dài ngắn.Bo thun to nhỏ":"長さ不揃い・袖口ゴムの大小"
+};
+const jaOf = (kind, x) => (S.listJa[kind]||{})[x] || LIST_JA[x] || "";
+const jaName = x => { const k = String(x||"").trim(); return (S.listJa.products||{})[k] || LIST_JA[k] || ""; };
+function nm(x){ if(!x || S.lang!=="ja") return x||""; return String(x).split(/(, |; )/).map(p => jaName(p) || p).join(""); }
 const meName = () => S.me.id==="owner" ? T("Chủ trang") : S.me.name;
 const isJa = s => /[぀-ヿ一-鿿]/.test(s);
 const needTr = s => (S.lang==="ja") !== isJa(s);
@@ -981,10 +1022,10 @@ const fPending = () => [...S.checks.entries()].filter(([id,c]) => fState(id,c)==
 const pendingList = () => [...S.checks.entries()].filter(([id,c]) => (stateOf(c,S.apprs.get(id))==="pending" || fState(id,c)==="mret") && forMe(c)).sort((a,b)=> a[1].at<b[1].at?1:-1);
 const multi = () => S.cfg.machines.length>1;
 function marks(c){ const ja = S.lang==="ja";
-  if(isQ(c.shift)) return QITEMS.map(i => '<span class="mark'+(c[i.k]==="NG"?" ng":"")+'">'+(ja?i.sj:i.short)+' '+sym(c[i.k])+'</span>').join("")+(c.product ? '<span class="mark">'+esc(c.product)+'</span>' : '');
+  if(isQ(c.shift)) return QITEMS.map(i => '<span class="mark'+(c[i.k]==="NG"?" ng":"")+'">'+(ja?i.sj:i.short)+' '+sym(c[i.k])+'</span>').join("")+(c.product ? '<span class="mark">'+esc(nm(c.product))+'</span>' : '');
   return ITEMS.map(i => '<span class="mark'+(c[i.k]==="NG"?" ng":"")+'">'+(ja?i.sj:i.short)+' <b class="mono">'+esc(i.k==="temp" ? (c.tempVal||"")+(c.temp2Val?"/"+c.temp2Val:"")+"°C" : (c.speedVal||""))+'</b> '+sym(c[i.k])+'</span>').join("")
   +(c.shift==="S" ? PROC_ITEMS.map(i => '<span class="mark'+(c[i.k]==="NG"?" ng":"")+'">'+(ja?i.sj:i.short)+' '+sym(c[i.k])+'</span>').join("") : '')
-  +(c.product ? '<span class="mark">'+esc(c.product)+'</span>' : '')
+  +(c.product ? '<span class="mark">'+esc(nm(c.product))+'</span>' : '')
   +(c.shift==="S" && c.steps ? '<div class="who">'+STEPS.map(i => '<span>'+(ja?i.sj:i.short)+' <b class="mono">'+esc(c.steps[i.k]||"")+'</b>'+(c.stepsBy && c.stepsBy[i.k] ? ' · '+esc(c.stepsBy[i.k]) : '')+'</span>').join("")+'</div>' : '')
   +(c.stepsLog && c.stepsLog.length ? '<div class="edited" style="flex:1 1 100%">'+c.stepsLog.map(l => esc(logText(l))).join("<br>")+'</div>' : ''); }
 /* Bảng chi tiết phiếu cho tổ trưởng: đúng trình tự kiểm tra, mỗi bước một dòng */
@@ -996,13 +1037,13 @@ function checkParts(c){ const ja = S.lang==="ja", st = S.steps.get(c.date+"_"+c.
     const at = stepAt(c.date, c.machineId, i.k);
     rows.push([esc(ja ? i.sj : i.short)+'<small>'+T("Trước {t}",{t:at})+'</small>', res, t ? '<span class="mono'+(late(t, at) ? " ngt" : "")+'">'+esc(t)+'</span>' : cell(""), statusCell(t, at), cell(by), note ? txt(note) : cell(""), (i.k==="sample" && (c.sampleQ==="NG" || c.gloss==="NG" || c.sample==="NG"))]); });
   const tw = timesFor(c.date, c.machineId, c.shift), due = tw.due, ft = fmtTime(c.firstAt), sc = ft && toMin(ft) < toMin(tw.from) ? '<span class="chip wait">'+T("Kiểm quá sớm")+'</span>' : statusCell(ft, due);
-  if(isQ(c.shift)){ irows.push([esc(T(HAS_PRODUCT ? "Tên sản phẩm" : "Giờ kiểm"))+'<small>'+T("Phải xong trước {t}",{t:due})+'</small>', HAS_PRODUCT ? '<b>'+esc(c.product||"—")+'</b>' : resultChip(c), '<span class="mono'+(lateBy(ft, due) ? " ngt" : "")+'">'+ft+'</span>', sc, cell(c.checker), c.note ? txt(c.note) : cell(""), false]);
+  if(isQ(c.shift)){ irows.push([esc(T(HAS_PRODUCT ? "Tên sản phẩm" : "Giờ kiểm"))+'<small>'+T("Phải xong trước {t}",{t:due})+'</small>', HAS_PRODUCT ? '<b>'+esc(nm(c.product||"—"))+'</b>' : resultChip(c), '<span class="mono'+(lateBy(ft, due) ? " ngt" : "")+'">'+ft+'</span>', sc, cell(c.checker), c.note ? txt(c.note) : cell(""), false]);
     QITEMS.forEach(i => irows.push([esc(ja ? i.sj : i.short), '<b class="'+(c[i.k]==="NG"?"ngt":"okt")+'">'+(sym(c[i.k])||"—")+'</b>', '', '', '', '', c[i.k]==="NG"])); }
   else ITEMS.forEach(i => { const v = i.k==="temp" ? (c.tempVal||"")+(c.temp2Val ? "/"+c.temp2Val : "")+"°C" : (c.speedVal||""), note = i.k==="temp" ? c.noteTemp : c.noteSpeed;
     irows.push([esc(ja ? i.sj : i.short)+'<small>'+T("Phải xong trước {t}",{t:due})+'</small>', '<span class="mono">'+esc(v)+'</span> <b class="'+(c[i.k]==="NG"?"ngt":"okt")+'">'+sym(c[i.k])+'</b>', '<span class="mono'+(lateBy(ft, due) ? " ngt" : "")+'">'+ft+'</span>', sc, cell(c.checker), note ? txt(note) : (i.k==="temp" && c.note && c.noteTemp===undefined ? txt(c.note) : cell("")), c[i.k]==="NG"]); });
   const so = schedOf(c.date, c.machineId), edits = (c.stepsLog||[]).filter(l => l.act==="edit" || l.act==="cancel" || l.act==="proxy").map(logText)
     .concat((c.hist||[]).map((hh, n, arr) => T("{by} sửa phiếu kiểm lúc {t}",{by:hh.editBy||hh.by||"", t:fmtTime(n+1<arr.length ? arr[n+1].at : c.at)})+" · "+T("số cũ: {v}",{v:isQ(c.shift) ? [hh.product, QITEMS.map(i => sym(hh[i.k])||"—").join("/")].filter(Boolean).join(" ") : (hh.tempVal||"")+"°C / "+(hh.speedVal||"")})));
-  const ext = (st.samples||[]).map(x => [esc(ja ? "サンプル" : "Chạy mẫu")+' '+(x.n+1)+'<small>'+T("Khi đổi mã hàng")+'</small>', '<b>'+esc(x.product||"—")+'</b> · '+PROC_ITEMS.map(p => { const v = p.k==="sample" ? x.sampleQ : x.gloss; return esc(ja ? p.sj : p.short)+' <b class="'+(v==="NG"?"ngt":"okt")+'">'+(sym(v)||"—")+'</b>'; }).join(" · "), '<span class="mono">'+esc(x.time||"")+'</span>', '<span class="sub">—</span>', cell(x.by), x.note ? txt(x.note) : cell(""), x.sampleQ==="NG" || x.gloss==="NG"]);
+  const ext = (st.samples||[]).map(x => [esc(ja ? "サンプル" : "Chạy mẫu")+' '+(x.n+1)+'<small>'+T("Khi đổi mã hàng")+'</small>', '<b>'+esc(nm(x.product||"—"))+'</b> · '+PROC_ITEMS.map(p => { const v = p.k==="sample" ? x.sampleQ : x.gloss; return esc(ja ? p.sj : p.short)+' <b class="'+(v==="NG"?"ngt":"okt")+'">'+(sym(v)||"—")+'</b>'; }).join(" · "), '<span class="mono">'+esc(x.time||"")+'</span>', '<span class="sub">—</span>', cell(x.by), x.note ? txt(x.note) : cell(""), x.sampleQ==="NG" || x.gloss==="NG"]);
   return {steps:rows, items:irows, ext:ext, edits:edits, so:so}; }
 function detailHtml(secs, edits, so){ let n = 0;
   return (so && schedDiff(so) ? '<div class="sub">'+T("Giờ quy định ngày này đã điều chỉnh ({by}):",{by:so.by||""})+' '+schedDiff(so)+'</div>' : '')+'<div class="scroll"><table class="dtab"><tr><th>#</th><th>'+T("Hạng mục")+'</th><th>'+T("Kết quả")+'</th><th>'+T("Giờ")+'</th><th>'+T("Trạng thái")+'</th><th>'+T("Phụ trách")+'</th><th>'+T("Ghi chú")+'</th></tr>'
@@ -1261,7 +1302,7 @@ function groupHtml(k){ const r = rf(k), info = rowInfo(k), ja = S.lang==="ja", m
     const late = !info.done && timingAt(k, new Date(), mid).timing==="late";
     head = [stageName(k), T("Phải xong trước {t}",{t:timesFor(S.today, mid, k).due})+(late ? " · "+T("Đã quá giờ quy định {n} phút",{n:timingAt(k, new Date(), mid).lateMin}) : ""), late];
     if(q){ const plist = S.products.concat(r.product && !S.products.includes(r.product) ? [r.product] : []);
-      rows = (!HAS_PRODUCT ? '' : gr("val", gTitle(T("Tên sản phẩm")), open ? (S.products.length ? '<select data-rtext="'+k+'" data-f="product" aria-label="'+T("Tên sản phẩm")+'"><option value="">'+T("Chọn sản phẩm")+'</option>'+plist.map(x => '<option value="'+esc(x)+'"'+(x===r.product?" selected":"")+'>'+esc(x)+'</option>').join("")+'</select>' : '<input type="text" data-rtext="'+k+'" data-f="product" value="'+esc(r.product)+'" placeholder="'+T("Tên sản phẩm")+'">') : '<b>'+(r.product ? esc(r.product) : '—')+'</b>', '', '', ''))
+      rows = (!HAS_PRODUCT ? '' : gr("val", gTitle(T("Tên sản phẩm")), open ? (S.products.length ? '<select data-rtext="'+k+'" data-f="product" aria-label="'+T("Tên sản phẩm")+'"><option value="">'+T("Chọn sản phẩm")+'</option>'+plist.map(x => '<option value="'+esc(x)+'"'+(x===r.product?" selected":"")+'>'+esc(nm(x))+'</option>').join("")+'</select>' : '<input type="text" data-rtext="'+k+'" data-f="product" value="'+esc(nm(r.product))+'" placeholder="'+T("Tên sản phẩm")+'">') : '<b>'+(r.product ? esc(nm(r.product)) : '—')+'</b>', '', '', ''))
         + QITEMS.map(i => gr("val", gTitle(ja ? i.jp : i.vi), open ? okngR(k, i.k, r.vals[i.k]) : '<b class="'+(r.vals[i.k]==="NG"?"ngt":"okt")+'">'+sym(r.vals[i.k])+'</b>', '', '', '')).join("");
       const qng = QITEMS.some(i => r.vals[i.k]==="NG");
       if(!HAS_PRODUCT){ if((open && qng) || have) rows += gr("val", gTitle(T("Ảnh lỗi"), open && qng ? T("Bắt buộc khi có ×") : ""), '<div class="inl">'+(open && qng ? camR(k, have, "Chụp ảnh lỗi (bắt buộc)") : '')+(have ? '<img class="thumb" alt="'+T("Ảnh bằng chứng lỗi")+'" src="'+have+'">' : '')+'</div>', open && qng ? '<span class="alert inl">'+T("Ngưng kiểm hàng và báo ngay cho tổ trưởng.")+'</span>' : '', '', ''); }
@@ -1279,7 +1320,7 @@ function groupHtml(k){ const r = rf(k), info = rowInfo(k), ja = S.lang==="ja", m
     if(info.done && !have && info.hasPhoto) fetchPhoto(sid).then(ok => { if(ok && S.tab==="check") renderCheck(); });
     head = [(ja ? i.jp : i.vi)+(n ? " · "+T("Lần {n}",{n:n+1}) : ""), n ? T("Khi đổi mã hàng") : T("Trước {t}",{t:stepAt(S.today, mid, k)}), false];
     const plist = S.products.concat(r.product && !S.products.includes(r.product) ? [r.product] : []);
-    rows = gr("val", gTitle(T("Tên sản phẩm")), open ? (S.products.length ? '<select data-rtext="'+k+'" data-f="product" aria-label="'+T("Tên sản phẩm")+'"><option value="">'+T("Chọn sản phẩm")+'</option>'+plist.map(x => '<option value="'+esc(x)+'"'+(x===r.product?" selected":"")+'>'+esc(x)+'</option>').join("")+'</select>' : '<input type="text" data-rtext="'+k+'" data-f="product" value="'+esc(r.product)+'" placeholder="'+T("Tên sản phẩm")+'">') : '<b>'+(r.product ? esc(r.product) : '—')+'</b>', '', '', '')
+    rows = gr("val", gTitle(T("Tên sản phẩm")), open ? (S.products.length ? '<select data-rtext="'+k+'" data-f="product" aria-label="'+T("Tên sản phẩm")+'"><option value="">'+T("Chọn sản phẩm")+'</option>'+plist.map(x => '<option value="'+esc(x)+'"'+(x===r.product?" selected":"")+'>'+esc(nm(x))+'</option>').join("")+'</select>' : '<input type="text" data-rtext="'+k+'" data-f="product" value="'+esc(nm(r.product))+'" placeholder="'+T("Tên sản phẩm")+'">') : '<b>'+(r.product ? esc(nm(r.product)) : '—')+'</b>', '', '', '')
      + PROC_ITEMS.map(p => { const f = p.k==="sample" ? "sampleQ" : "gloss"; return gr("val", gTitle(ja ? p.jp : p.vi), open ? okngR(k, f, r.vals[f]) : '<b class="'+(r.vals[f]==="NG"?"ngt":"okt")+'">'+sym(r.vals[f])+'</b>', '', '', ''); }).join("")
       + gr("val", gTitle(T("Ảnh mẫu"), open ? T("Bắt buộc") : ""), '<div class="inl">'+(open ? camR(k, have, "Chụp ảnh mẫu (bắt buộc)") : '')+(have ? '<img class="thumb" alt="'+T("Ảnh hạt PVC mẫu")+'" src="'+have+'">' : '')+'</div>', '', '', '');
     sub = T("Người chạy mẫu"); }
@@ -1311,7 +1352,7 @@ function devApRow(id, c, cols){ const d = S.dap, tt = d.lv==="tt", ppl = tt ? ap
 /* Popup duyệt trên iPad: tóm tắt phiếu + chọn tên + mật khẩu + biện pháp / lý do */
 function devApModal(){ const d = S.dap, c = d && S.checks.get(d.id); if(!c) return ''; const tt = d.lv==="tt", ppl = tt ? apprLeaders(c.machineId) : apprManagers(), bad = !isPass(c), ja = S.lang==="ja", a = S.apprs.get(d.id), lt = liveTiming(c);
   if(c.hasPhoto && !S.photos.has(d.id)) fetchPhoto(d.id).then(ok => { if(ok && S.dap && S.tab==="check") renderCheck(); });
-  const items = isKim(c) ? '<span class="chip kim">📍 '+T("Phát hiện kim")+'</span>'+(c.code ? ' <b>'+esc(c.code)+'</b>' : '')+(c.product ? ' '+esc(c.product) : '')
+  const items = isKim(c) ? '<span class="chip kim">📍 '+T("Phát hiện kim")+'</span>'+(c.code ? ' <b>'+esc(c.code)+'</b>' : '')+(c.product ? ' '+esc(nm(c.product)) : '')
     : QITEMS.map(i => '<span class="dq'+(c[i.k]==="NG" ? " ng" : "")+'">'+esc(ja ? i.sj : i.short)+' '+(c[i.k]==="NG" ? "×" : "OK")+'</span>').join("");
   return '<div class="dapmodal" id="dapModal" role="dialog" aria-modal="true"><div class="dapbox">'
     +'<div class="daphead '+(tt ? "tt" : "qd")+'"><b>'+T(tt ? "Tổ trưởng duyệt" : "Quản đốc duyệt")+'</b><button type="button" class="dapclose" data-dapx="1" aria-label="'+T("Đóng")+'">✕</button></div>'
@@ -1360,8 +1401,8 @@ $("#tab-check").addEventListener("input", e => { const k = e.target.dataset && e
 $("#tab-check").addEventListener("change", e => { const k = e.target.dataset && e.target.dataset.dapf; if(!k || !S.dap) return; S.dap[k] = e.target.value; });
 /* ---------- iPad: báo cáo phát hiện kim (ghi nội dung + ảnh, duyệt 2 cấp như phiếu sáng/chiều) ---------- */
 /* Mã hàng (in đậm) + tên sản phẩm (dòng nhỏ) trong một ô */
-const codeProd = c => (c.code ? '<b>'+esc(c.code)+'</b>' : '<span class="sub">—</span>')+(c.product ? '<div class="sub">'+esc(c.product)+'</div>' : '');
-const listOpts = (L, v, ph) => '<option value="">'+T(ph)+'</option>'+L.concat(v && !L.includes(v) ? [v] : []).map(x => '<option value="'+esc(x)+'"'+(x===v?" selected":"")+'>'+esc(x)+'</option>').join("");
+const codeProd = c => (c.code ? '<b>'+esc(c.code)+'</b>' : '<span class="sub">—</span>')+(c.product ? '<div class="sub">'+esc(nm(c.product))+'</div>' : '');
+const listOpts = (L, v, ph) => '<option value="">'+T(ph)+'</option>'+L.concat(v && !L.includes(v) ? [v] : []).map(x => '<option value="'+esc(x)+'"'+(x===v?" selected":"")+'>'+esc(nm(x))+'</option>').join("");
 const kimToday = () => [...S.checks.entries()].filter(([,c]) => isKim(c) && c.date===S.today && c.machineId===devMid()).sort((a,b) => (a[1].kTime||"")<(b[1].kTime||"") ? 1 : -1);
 function kimForm(){ if(!S.kf || S.kf.day!==S.today+"|"+devMid()) S.kf = {day:S.today+"|"+devMid(), id:null, time:nowHM(), code:"", product:"", note:"", photo:null, person:"", pin:""}; return S.kf; }
 function kimPanel(){ const f = kimForm(), list = kimToday(), edit = f.id && S.checks.get(f.id), have = f.photo || (edit && edit.hasPhoto && S.photos.get(f.id));
@@ -1399,7 +1440,7 @@ function koPanel(){ const f = koForm(), d = (S.kouts||new Map()).get(f.key), mid
   const qin = (i, k, u) => '<label class="qi"><input type="text" inputmode="numeric" pattern="[0-9]*" data-ko="'+i+'" data-kof="'+k+'" value="'+esc(f.lines[i][k])+'" aria-label="'+T(u)+'"><span>'+T(u)+'</span></label>';
   const row = (l, i) => { const plist = S.products.concat(l.product && !S.products.includes(l.product) ? [l.product] : []);
     return '<div class="korow'+(l.saved && !f.dirty ? " saved" : " new")+'">'
-      +'<div class="lc">'+ml("Tên sản phẩm")+(S.products.length ? '<select data-ko="'+i+'" data-kof="product" aria-label="'+T("Tên sản phẩm")+'"><option value="">'+T("Chọn sản phẩm")+'</option>'+plist.map(x => '<option value="'+esc(x)+'"'+(x===l.product ? " selected" : "")+'>'+esc(x)+'</option>').join("")+'</select>' : '<input type="text" data-ko="'+i+'" data-kof="product" value="'+esc(l.product)+'" placeholder="'+T("Tên sản phẩm")+'">')+'</div>'
+      +'<div class="lc">'+ml("Tên sản phẩm")+(S.products.length ? '<select data-ko="'+i+'" data-kof="product" aria-label="'+T("Tên sản phẩm")+'"><option value="">'+T("Chọn sản phẩm")+'</option>'+plist.map(x => '<option value="'+esc(x)+'"'+(x===l.product ? " selected" : "")+'>'+esc(nm(x))+'</option>').join("")+'</select>' : '<input type="text" data-ko="'+i+'" data-kof="product" value="'+esc(nm(l.product))+'" placeholder="'+T("Tên sản phẩm")+'">')+'</div>'
       +'<div class="lc">'+ml("Mã hàng")+(S.codes.length ? '<select data-ko="'+i+'" data-kof="code" aria-label="'+T("Mã hàng")+'">'+listOpts(S.codes, l.code, "Chọn mã hàng")+'</select>' : '<input type="text" data-ko="'+i+'" data-kof="code" value="'+esc(l.code)+'" placeholder="'+T("Mã hàng")+'">')+'</div>'
       +'<div class="lc">'+ml("Số lượng thực tế")+'<div class="lq">'+qin(i,"qta","tá")+qin(i,"qdoi","đôi")+'</div></div>'
       +'<div class="lc">'+ml("Số lượng phát hiện kim")+'<div class="lq">'+qin(i,"kim","đôi")+'</div></div>'
@@ -1721,7 +1762,7 @@ function renderDaily(){
         +'<div class="lc">'+ml("Ghi chú")+'<input type="text" data-l="'+i+'" data-di="'+j+'" data-f="note" value="'+esc(x.note)+'" placeholder="'+T("Lỗi khác, ghi chú…")+'" aria-label="'+T("Ghi chú")+'"></div>'
         +'<button type="button" class="btn sm xdef" data-ddel="'+i+':'+j+'" aria-label="'+T("Xoá dòng loại 2")+'" title="'+T("Xoá dòng loại 2")+'"'+(l.defs.length<2 ? " disabled" : "")+'>✕</button></div>'; };
     return '<div class="lrow '+st+'" data-row="'+i+'">'
-      +'<div class="lc lp">'+ml("Tên sản phẩm")+(S.products.length ? '<select data-l="'+i+'" data-f="product" aria-label="'+T("Tên sản phẩm")+'"><option value="">'+T("Chọn sản phẩm")+'</option>'+plist.map(x => '<option value="'+esc(x)+'"'+(x===l.product?" selected":"")+'>'+esc(x)+'</option>').join("")+'</select>' : '<input type="text" data-l="'+i+'" data-f="product" value="'+esc(l.product)+'" placeholder="'+T("Tên sản phẩm")+'">')+'</div>'
+      +'<div class="lc lp">'+ml("Tên sản phẩm")+(S.products.length ? '<select data-l="'+i+'" data-f="product" aria-label="'+T("Tên sản phẩm")+'"><option value="">'+T("Chọn sản phẩm")+'</option>'+plist.map(x => '<option value="'+esc(x)+'"'+(x===l.product?" selected":"")+'>'+esc(nm(x))+'</option>').join("")+'</select>' : '<input type="text" data-l="'+i+'" data-f="product" value="'+esc(nm(l.product))+'" placeholder="'+T("Tên sản phẩm")+'">')+'</div>'
       +'<div class="lc">'+ml("Sản lượng thực tế")+'<div class="lq">'+qi(i,"qta","tá")+qi(i,"qdoi","đôi")+'</div></div>'
       +'<div class="ldefs">'+l.defs.map(defRow).join("")+'<button type="button" class="btn sm addef" data-dadd="'+i+'">+ '+T("Thêm loại 2")+'</button></div>'
       +'<div class="lc lact"><button class="btn pri sm" data-lsave="'+i+'">'+T(l.saved ? "Cập nhật" : "Lưu")+'</button><button class="btn sm warn" data-ldel="'+i+'" aria-label="'+T("Xoá dòng")+'">✕</button></div>'
@@ -1962,7 +2003,7 @@ async function leadConfirm(btn){ const k = S.dform.key, d = S.daily.get(k);
 function mgrDailyCard(k, d, canAct){ const ap = S.dapprs.get(k) || {}, st = dState(d, ap), ls = dLines(d), tq = ls.reduce((a,l) => a+(l.qty||0), 0), tb = ls.reduce((a,l) => a+(l.b2||0), 0);
   return '<div class="card'+(tb>0 ? " ng" : "")+'"><div class="head"><b><span class="mono">'+fmtDate(d.date)+'</span> · '+esc(mName(d.machineName))+'</b><span class="row">'+dStateChip(st, ap)+'</span></div>'
     +'<div class="scroll"><table class="dtab"><tr><th>#</th><th>'+T("Tên sản phẩm")+'</th><th>'+T("Sản lượng thực tế")+'</th><th>'+T("Số lượng loại 2")+'</th><th>'+T("Tỷ lệ loại 2:").replace(":","")+'</th><th>'+T("Nguyên nhân")+'</th><th>'+T("Ghi chú")+'</th></tr>'
-    +ls.map((l, n) => '<tr'+(l.b2>0 ? ' class="ngrow"' : '')+'><td class="mono">'+(n+1)+'</td><td>'+esc(l.product||"")+'</td><td class="mono">'+qtyText(l.qty)+'</td><td class="mono">'+qtyText(l.b2||0)+'</td><td class="mono">'+rateText(l.qty, l.b2||0)+'</td><td class="wrap" colspan="2">'+(defText(l) ? txt(defText(l)) : '—')+'</td></tr>').join("")
+    +ls.map((l, n) => '<tr'+(l.b2>0 ? ' class="ngrow"' : '')+'><td class="mono">'+(n+1)+'</td><td>'+esc(nm(l.product||""))+'</td><td class="mono">'+qtyText(l.qty)+'</td><td class="mono">'+qtyText(l.b2||0)+'</td><td class="mono">'+rateText(l.qty, l.b2||0)+'</td><td class="wrap" colspan="2">'+(defText(l) ? txt(defText(l)) : '—')+'</td></tr>').join("")
     +'<tr class="secrow"><td></td><td>'+T("Tổng")+'</td><td class="mono">'+qtyText(tq)+'</td><td class="mono">'+qtyText(tb)+'</td><td class="mono">'+rateText(tq, tb)+'</td><td colspan="2"></td></tr></table></div>'
     +histHtml(d)
     +'<div class="sub">'+T("Tổ trưởng xác nhận: {n} lúc {t}",{n:esc(ap.leadBy||""), t:fmtTime(ap.leadTime)})+(d.timing==="late" ? ' · <span class="chip ng">'+T("Cập nhật sau 20:00")+'</span>' : '')+'</div>'
@@ -1975,7 +2016,7 @@ function histHtml(d){ const hs = (d.hist||[]).filter(h => h.act); if(!hs.length)
   return '<div class="edited">'+T("Lịch sử sửa ({n})",{n:hs.length})+'<br>'+hs.slice(-4).map(h => '<span class="mono">'+fmtTime(h.at)+'</span> '+esc(h.by||"")+' · '+esc(h.line||"")+': '+(h.act==="delete" ? T("đã xoá dòng (sản lượng {q}, loại 2 {b})",{q:qtyText(h.qty), b:qtyText(h.total)}) : T("sản lượng {a} → {b}, loại 2 {c} → {d}",{a:qtyText(h.qty), b:qtyText(h.nqty), c:qtyText(h.total), d:qtyText(h.ntotal)}))).join("<br>")+'</div>'; }
 function dailyLine(d, key, canApprove){ const st = dState(d, S.dapprs.get(key)), ap = S.dapprs.get(key);
   return '<div class="card'+(d.b2Total>0 ? " ng" : "")+'"><div class="head"><b><span class="mono">'+fmtDate(d.date)+'</span> · '+esc(mName(d.machineName))+'</b><span class="row"><span class="chip '+(d.b2Total>0?"ng":"ok")+'">'+T("Loại 2:")+' '+b2Text(d)+'</span>'+stateChip(st)+'</span></div>'
-  +(d.product ? '<div class="marks"><span class="mark">'+esc(d.product)+'</span></div>' : '')
+  +(d.product ? '<div class="marks"><span class="mark">'+esc(nm(d.product))+'</span></div>' : '')
   +(d.cause ? '<div>'+T("Nguyên nhân:")+' '+txt(d.cause)+'</div>' : '')+histHtml(d)
   +'<div class="sub">'+esc(d.reporter)+' · <span class="mono">'+fmtTime(d.at)+'</span>'+(st==="approved" ? ' · '+T("duyệt bởi")+' '+esc(ap.approver)+' <span class="mono">'+fmtTime(ap.at)+'</span>' : '')+'</div>'
   +(canApprove && st==="pending" ? '<div class="row"><button class="btn pri sm" data-dok="'+esc(key)+'">'+T(d.hist && d.hist.length ? "Duyệt bản sửa" : "Duyệt báo cáo")+'</button></div>' : '')+'</div>'; }
@@ -2035,7 +2076,7 @@ const chkCells = c => '<td>'+stepsCell(c)+'</td><td class="nw">'+tempCell(c)+'</
 const chkHead = () => '<th>'+T("Đầu ca")+'</th><th>'+T("Nhiệt độ")+'</th><th>'+T("Tốc độ")+'</th>';
 function photoCell(id, c){ const ps = checkPhotos(id, c); if(!ps.length) return '<span class="sub">—</span>';
   const miss = ps.filter(p => !S.photos.has(p.pid));
-  return '<div class="phcell">'+ps.filter(p => S.photos.has(p.pid)).map(p => '<figure class="phmini'+(p.ng?" ng":"")+'"><img class="thumb" src="'+S.photos.get(p.pid)+'" alt="'+esc(p.label)+'"><figcaption>'+esc(p.label)+(p.product ? '<br><b>'+esc(p.product)+'</b>' : '')+'</figcaption></figure>').join("")
+  return '<div class="phcell">'+ps.filter(p => S.photos.has(p.pid)).map(p => '<figure class="phmini'+(p.ng?" ng":"")+'"><img class="thumb" src="'+S.photos.get(p.pid)+'" alt="'+esc(p.label)+'"><figcaption>'+esc(p.label)+(p.product ? '<br><b>'+esc(nm(p.product))+'</b>' : '')+'</figcaption></figure>').join("")
     +(miss.length ? '<button type="button" class="btn sm" data-phload="'+esc(id)+'">📷 '+T("Xem {n} ảnh",{n:miss.length})+'</button>' : '')+'</div>'; }
 function autoPhotos(list){ S.phTried = S.phTried || new Set(); const lim = addDays(S.today, -1), need = [];
   list.forEach(([id,c]) => { if(c.date < lim) return; checkPhotos(id, c).forEach(p => { if(!S.photos.has(p.pid) && !S.phTried.has(p.pid)){ S.phTried.add(p.pid); need.push(p.pid); } }); });
@@ -2077,10 +2118,10 @@ function dayTable(list, opt){ const gs = dayGroups(list); dayLoad(gs); opt = opt
   return '<div class="scroll"><table class="dayt"><tr><th>'+T("Ngày")+'</th><th>'+T("Máy")+'</th><th>'+T("Kết quả")+'</th><th>'+T("Tiến trình kiểm trong ngày")+' <span class="sub">'+T("(xanh: đạt · đỏ: trễ hoặc × · xám: chưa làm)")+'</span></th><th>'+T("Duyệt sáng")+'</th><th>'+T("Duyệt chiều")+'</th></tr>'
     +gs.map(g => { const ph = dayPhotos(g), ja = S.lang==="ja";
       let pts = STEPS.map(i => { const x = stepX(g, i.k), p = i.k==="sample" ? ph.find(y => y.n===0) : null, ng = p && (p.q==="NG" || p.gl==="NG");
-        return pt(ja ? i.sj : ({open:"Mở",clean:"VS",warm:"LN",sample:"Mẫu"})[i.k], lt(x.t, x.at), x.by, !x.t ? "wait" : (lateBy(x.t, x.at) || ng) ? "bad" : "", p ? '<span class="sres">'+okW(p.q)+'/'+okW(p.gl)+'</span>' : '', p ? phImg(p.pid, ng, "fth")+'<span class="pname">'+esc(p.product||"—")+'</span>' : ''); });
-      ph.filter(p => typeof p.n==="number" && p.n).forEach(p => { const ng = p.q==="NG" || p.gl==="NG"; pts.push(pt(T("Mẫu {n}",{n:p.n+1}), '<span class="ontime">'+esc(p.time)+'</span>', p.by, ng ? "bad" : "", '<span class="sres">'+okW(p.q)+'/'+okW(p.gl)+'</span>', phImg(p.pid, ng, "fth")+'<span class="pname">'+esc(p.product||"—")+'</span>')); });
+        return pt(ja ? i.sj : ({open:"Mở",clean:"VS",warm:"LN",sample:"Mẫu"})[i.k], lt(x.t, x.at), x.by, !x.t ? "wait" : (lateBy(x.t, x.at) || ng) ? "bad" : "", p ? '<span class="sres">'+okW(p.q)+'/'+okW(p.gl)+'</span>' : '', p ? phImg(p.pid, ng, "fth")+'<span class="pname">'+esc(nm(p.product||"—"))+'</span>' : ''); });
+      ph.filter(p => typeof p.n==="number" && p.n).forEach(p => { const ng = p.q==="NG" || p.gl==="NG"; pts.push(pt(T("Mẫu {n}",{n:p.n+1}), '<span class="ontime">'+esc(p.time)+'</span>', p.by, ng ? "bad" : "", '<span class="sres">'+okW(p.q)+'/'+okW(p.gl)+'</span>', phImg(p.pid, ng, "fth")+'<span class="pname">'+esc(nm(p.product||"—"))+'</span>')); });
       SLOTS.map(k => [k, g[k], g["id"+k]]).forEach(([k, c, id]) => { if(!c){ pts.push(pt(shiftL(k), '', '', "wait")); return; } const due = timesFor(c.date, c.machineId, c.shift).due, ft = fmtTime(c.firstAt), bad = !isPass(c) || lateBy(ft, due);
-        if(isQ(k)){ const ngs = QITEMS.filter(i => c[i.k]==="NG"); pts.push(pt(shiftL(k), lt(ft, due), c.checker, bad ? "bad" : "", '<span class="sres">'+(HAS_PRODUCT ? QITEMS.map(i => okW(c[i.k])).join("/") : ngs.length ? ngs.map(i => '<b class="ngt">× '+esc(S.lang==="ja" ? i.sj : i.short)+'</b>').join("<br>") : okW("OK"))+'</span>'+(c.note ? '<span class="pnote">'+txt(c.note)+'</span>' : ''), c.hasPhoto ? phImg(id, !isPass(c), "fth")+(c.product ? '<span class="pname">'+esc(c.product)+'</span>' : '') : '')); return; }
+        if(isQ(k)){ const ngs = QITEMS.filter(i => c[i.k]==="NG"); pts.push(pt(shiftL(k), lt(ft, due), c.checker, bad ? "bad" : "", '<span class="sres">'+(HAS_PRODUCT ? QITEMS.map(i => okW(c[i.k])).join("/") : ngs.length ? ngs.map(i => '<b class="ngt">× '+esc(S.lang==="ja" ? i.sj : i.short)+'</b>').join("<br>") : okW("OK"))+'</span>'+(c.note ? '<span class="pnote">'+txt(c.note)+'</span>' : ''), c.hasPhoto ? phImg(id, !isPass(c), "fth")+(c.product ? '<span class="pname">'+esc(nm(c.product))+'</span>' : '') : '')); return; }
         pts.push(pt(shiftL(k), lt(ft, due), c.checker, bad ? "bad" : "", '<span class="tsv">'+esc((c.tempVal||"—")+(c.temp2Val ? "/"+c.temp2Val : ""))+'° '+okW(c.temp)+'</span><span class="tsv">'+esc(c.speedVal||"—")+' '+okW(c.speed)+'</span>', c.hasPhoto ? phImg(id, true, "fth") : '')); });
       return '<tr><td class="d mono">'+fmtDate(g.date).slice(0,5)+'</td><td><b>'+esc(mName(g.name))+'</b></td><td>'+dayRes(g)+'</td><td><div class="tline">'+pts.join("")+'</div>'+moreBtn(g)+'</td><td>'+apCell(g.idS, g.S)+apBtns(g.idS, g.S, opt)+'</td><td>'+apCell(g.idC, g.C)+apBtns(g.idC, g.C, opt)+'</td></tr>'+apInput(g.idS, g.S, opt)+apInput(g.idC, g.C, opt); }).join("")+'</table></div>'; }
 /* Nút duyệt nằm ngay trong cột Duyệt sáng / Duyệt chiều của bảng mẫu F (chỉ với phiếu đến lượt người đang xem) */
@@ -2503,7 +2544,7 @@ function prodPanel(r){
   const grp = (title, rows) => '<div class="pblock"><h3>'+T(title)+'</h3><div class="scroll"><table><tr><th>'+T(title==="Theo máy"?"Máy":"Tên sản phẩm")+'</th><th>'+T("Sản lượng")+'</th><th>'+T("Hàng loại 2")+'</th><th>'+T("Tỷ lệ loại 2")+'</th></tr>'+rows.map(([k,o]) => '<tr><td>'+esc(k)+'</td><td class="mono">'+qtyText(o.q)+'</td><td class="mono">'+qtyText(o.b)+'</td><td><b class="mono">'+rateText(o.q, o.bq)+'</b></td></tr>').join("")+'</table></div></div>';
   h += '<div class="pareto">'+grp("Theo sản phẩm", groupLines(r.daily, x => x.l.product))+grp("Theo máy", groupLines(r.daily, x => mName(x.d.machineName)))+'</div>';
   h += '<h3>'+T("Chi tiết theo ngày")+'</h3><div class="scroll"><table><tr><th>'+T("Ngày")+'</th><th>'+T("Máy")+'</th><th>'+T("Tên sản phẩm")+'</th><th>'+T("Sản lượng")+'</th><th>'+T("Hàng loại 2")+'</th><th>'+T("Tỷ lệ loại 2")+'</th><th colspan="2">'+T("Chi tiết loại 2")+'</th><th>'+T("Người nhập")+'</th><th>'+T("Cập nhật")+'</th></tr>'
-    +allLines(r.daily).map(({d,l}) => '<tr><td class="d">'+fmtDate(d.date).slice(0,5)+'</td><td>'+esc(mName(d.machineName))+'</td><td>'+esc(l.product||"")+'</td><td class="mono">'+(l.qty===null || l.qty===undefined ? "—" : qtyText(l.qty))+'</td><td><b class="mono">'+qtyText(l.b2)+'</b></td><td class="mono">'+rateText(l.qty, l.b2)+'</td><td style="white-space:normal;min-width:200px" colspan="2">'+txt(defText(l))+'</td><td>'+esc(l.by||d.reporter||"")+'</td><td><span class="mono">'+fmtTime(l.at||d.at)+'</span>'+(dTiming({at:l.at||d.at}).timing==="late" ? ' <span class="chip ng">'+T("Sau 20:00")+'</span>' : '')+'</td></tr>').join("")+'</table></div>';
+    +allLines(r.daily).map(({d,l}) => '<tr><td class="d">'+fmtDate(d.date).slice(0,5)+'</td><td>'+esc(mName(d.machineName))+'</td><td>'+esc(nm(l.product||""))+'</td><td class="mono">'+(l.qty===null || l.qty===undefined ? "—" : qtyText(l.qty))+'</td><td><b class="mono">'+qtyText(l.b2)+'</b></td><td class="mono">'+rateText(l.qty, l.b2)+'</td><td style="white-space:normal;min-width:200px" colspan="2">'+txt(defText(l))+'</td><td>'+esc(l.by||d.reporter||"")+'</td><td><span class="mono">'+fmtTime(l.at||d.at)+'</span>'+(dTiming({at:l.at||d.at}).timing==="late" ? ' <span class="chip ng">'+T("Sau 20:00")+'</span>' : '')+'</td></tr>').join("")+'</table></div>';
   return h+'</div>'; }
 /* Sản lượng kiểm và phát hiện kim (từ "Báo cáo số lượng kiểm" trên iPad): số lượng tính theo đôi, tỷ lệ = đôi phát hiện kim / số lượng thực tế */
 const kimRate = (q, k) => q>0 ? (Math.round(k/q*10000)/100).toString().replace(".", S.lang==="ja" ? "." : ",")+"%" : "—";
@@ -2576,7 +2617,7 @@ function kdModal(){ const k = S.kdel, x = k && kdFind(k.key); if(!x || !x.l) ret
   return '<div class="dapmodal" id="kdModal" role="dialog" aria-modal="true"><div class="dapbox">'
     +'<div class="daphead del"><b>'+T("Xoá báo cáo số lượng kiểm")+'</b><button type="button" class="dapclose" data-kdx="1" aria-label="'+T("Đóng")+'">✕</button></div>'
     +'<div class="dapsum"><div class="dapline"><span class="mono">'+fmtDate(x.d.date)+'</span> · '+esc(mName(x.d.machineName))+'</div>'
-    +'<div class="dapline"><b>'+esc(x.l.code||"—")+'</b> '+esc(x.l.product||"")+'</div>'
+    +'<div class="dapline"><b>'+esc(x.l.code||"—")+'</b> '+esc(nm(x.l.product||""))+'</div>'
     +'<div class="dapline">'+T("Số lượng thực tế")+': <b class="mono">'+qtyText(x.l.qty||0)+'</b> · '+T("Phát hiện kim")+': <b class="mono">'+(x.l.kim||0)+' '+T("đôi")+'</b></div>'
     +'<div class="dapline sub">'+T("Người nhập")+': '+esc(x.d.by||"")+' · '+fmtDT(x.d.at)+'</div>'
     +(last ? '<div class="dapline ngt">'+T("Đây là dòng cuối cùng: cả báo cáo của ngày này, máy này sẽ bị xoá.")+'</div>' : '')+'</div>'
@@ -2618,9 +2659,9 @@ function koReportPanel(r){ const ls = koLines(r.kouts), tq = ls.reduce((a,x) => 
   const grp = (title, rows) => '<div class="pblock"><h3>'+T(title)+'</h3><div class="scroll"><table><tr><th>'+T(title==="Theo máy" ? "Máy" : title==="Theo mã hàng" ? "Mã hàng" : "Tên sản phẩm")+'</th><th>'+T("Số lượng thực tế")+'</th><th>'+T("Phát hiện kim (đôi)")+'</th><th>'+T("Tỷ lệ")+'</th></tr>'
     +rows.map(([k,o]) => '<tr><td>'+esc(k)+'</td><td class="mono">'+qtyText(o.q)+'</td><td class="mono'+(o.k ? " ngt" : "")+'"><b>'+o.k+'</b></td><td><b class="mono'+(o.k ? " ngt" : "")+'">'+kimRate(o.q, o.k)+'</b></td></tr>').join("")
     +'<tr class="secrow"><td>'+T("Tổng")+'</td><td class="mono">'+qtyText(rows.reduce((a,[,o]) => a+o.q, 0))+'</td><td class="mono"><b>'+rows.reduce((a,[,o]) => a+o.k, 0)+'</b></td><td><b class="mono">'+kimRate(tq, tk)+'</b></td></tr></table></div></div>';
-  h += '<div class="pareto">'+grp("Theo mã hàng", koGroup(r.kouts, x => x.l.code))+grp("Theo sản phẩm", koGroup(r.kouts, x => x.l.product))+grp("Theo máy", koGroup(r.kouts, x => mName(x.d.machineName)))+'</div>';
+  h += '<div class="pareto">'+grp("Theo mã hàng", koGroup(r.kouts, x => x.l.code))+grp("Theo sản phẩm", koGroup(r.kouts, x => nm(x.l.product)))+grp("Theo máy", koGroup(r.kouts, x => mName(x.d.machineName)))+'</div>';
   h += '<h3>'+T("Chi tiết theo ngày")+'</h3><div class="scroll"><table><tr><th>'+T("Ngày")+'</th><th>'+T("Máy")+'</th><th>'+T("Mã hàng")+'</th><th>'+T("Tên sản phẩm")+'</th><th>'+T("Số lượng thực tế")+'</th><th>'+T("Phát hiện kim (đôi)")+'</th><th>'+T("Tỷ lệ")+'</th><th>'+T("Người nhập")+'</th><th>'+T("Cập nhật")+'</th>'+(canKm() ? '<th></th>' : '')+'</tr>'
-    +ls.slice().reverse().map(({d,l}) => '<tr><td class="d">'+fmtDate(d.date).slice(0,5)+'</td><td>'+esc(mName(d.machineName))+'</td><td><b>'+esc(l.code||"—")+'</b></td><td>'+esc(l.product||"")+'</td><td class="mono">'+qtyText(l.qty||0)+'</td><td class="mono'+(l.kim ? " ngt" : "")+'"><b>'+(l.kim||0)+'</b></td><td class="mono">'+kimRate(l.qty, l.kim||0)+'</td><td>'+esc(d.by||"")+(d.byMgr ? ' <span class="chip mgr" title="'+esc(d.mgrNote||"")+'">'+T("QĐ nhập bổ sung")+'</span>' : '')+'</td><td class="mono">'+fmtTime(d.at)+'</td>'+(canKm() ? '<td class="nw"><button type="button" class="btn sm" data-kmopen="'+esc(d.date+"|"+d.machineId)+'">'+T("Sửa")+'</button> <button type="button" class="btn sm warn" data-kdel="'+esc(d.id+"|"+l.id)+'" aria-label="'+T("Xoá dòng")+'" title="'+T("Xoá dòng")+'">✕</button></td>' : '')+'</tr>').join("")+'</table></div>';
+    +ls.slice().reverse().map(({d,l}) => '<tr><td class="d">'+fmtDate(d.date).slice(0,5)+'</td><td>'+esc(mName(d.machineName))+'</td><td><b>'+esc(l.code||"—")+'</b></td><td>'+esc(nm(l.product||""))+'</td><td class="mono">'+qtyText(l.qty||0)+'</td><td class="mono'+(l.kim ? " ngt" : "")+'"><b>'+(l.kim||0)+'</b></td><td class="mono">'+kimRate(l.qty, l.kim||0)+'</td><td>'+esc(d.by||"")+(d.byMgr ? ' <span class="chip mgr" title="'+esc(d.mgrNote||"")+'">'+T("QĐ nhập bổ sung")+'</span>' : '')+'</td><td class="mono">'+fmtTime(d.at)+'</td>'+(canKm() ? '<td class="nw"><button type="button" class="btn sm" data-kmopen="'+esc(d.date+"|"+d.machineId)+'">'+T("Sửa")+'</button> <button type="button" class="btn sm warn" data-kdel="'+esc(d.id+"|"+l.id)+'" aria-label="'+T("Xoá dòng")+'" title="'+T("Xoá dòng")+'">✕</button></td>' : '')+'</tr>').join("")+'</table></div>';
   return h+'</div>'; }
 function b2All(list){ return qtyText(list.reduce((a,d) => a+(d.b2Total||0), 0)); }
 function reportStats(){
@@ -2717,9 +2758,9 @@ async function exportXlsx(){
   const w3 = XLSX.utils.aoa_to_sheet(drows); w3["!cols"] = [12,11,22,26,14,16,18,12,14,16,14,40,30,20,18,18].map(w => ({wch:w}));
   XLSX.utils.book_append_sheet(wb, w1, T("Tổng hợp")); XLSX.utils.book_append_sheet(wb, w2, T("Chi tiết"));
   const krows = [["Ngày","Giờ phát hiện","Máy","Mã hàng","Tên sản phẩm","Nội dung","Người báo","Tổ trưởng duyệt","Biện pháp","Quản đốc duyệt"].map(x => T(x))].concat((r.kim||[]).map(c => { const a = r.apprs.get(c.id), st = stateOf(c, a), f = (r.fapprs || S.fapprs).get(c.id), fok = st==="approved" && f && f.checkAt===c.at && f.apprAt===a.at;
-    return [fmtDate(c.date), c.kTime||"", mName(c.machineName), c.code||"", c.product||"", trPlain(c.note), c.checker||"", st==="approved" ? a.approver||"" : stateText(st), st==="approved" ? trPlain(a.action) : "", fok ? (f.status==="approved" ? f.approver||"" : T("Trả lại")) : ""]; }));
+    return [fmtDate(c.date), c.kTime||"", mName(c.machineName), c.code||"", nm(c.product||""), trPlain(c.note), c.checker||"", st==="approved" ? a.approver||"" : stateText(st), st==="approved" ? trPlain(a.action) : "", fok ? (f.status==="approved" ? f.approver||"" : T("Trả lại")) : ""]; }));
   const w4 = XLSX.utils.aoa_to_sheet(krows); w4["!cols"] = [12,10,18,16,22,40,16,18,30,18].map(w => ({wch:w})); XLSX.utils.book_append_sheet(wb, w4, T("Phát hiện kim"));
-  const orows = [["Ngày","Máy","Mã hàng","Tên sản phẩm","Số lượng thực tế (đôi)","Số lượng thực tế","Phát hiện kim (đôi)","Tỷ lệ phát hiện kim (%)","Người nhập","Cập nhật lúc","Ghi chú"].map(x => T(x))].concat(koLines(r.kouts).map(({d,l}) => [fmtDate(d.date), mName(d.machineName), l.code||"", l.product||"", l.qty||0, qtyText(l.qty||0), l.kim||0, l.qty>0 ? Math.round((l.kim||0)/l.qty*10000)/100 : "", d.by||"", fmtDT(d.at), d.byMgr ? T("QĐ nhập bổ sung")+(d.mgrNote ? ": "+d.mgrNote : "") : ""]));
+  const orows = [["Ngày","Máy","Mã hàng","Tên sản phẩm","Số lượng thực tế (đôi)","Số lượng thực tế","Phát hiện kim (đôi)","Tỷ lệ phát hiện kim (%)","Người nhập","Cập nhật lúc","Ghi chú"].map(x => T(x))].concat(koLines(r.kouts).map(({d,l}) => [fmtDate(d.date), mName(d.machineName), l.code||"", nm(l.product||""), l.qty||0, qtyText(l.qty||0), l.kim||0, l.qty>0 ? Math.round((l.kim||0)/l.qty*10000)/100 : "", d.by||"", fmtDT(d.at), d.byMgr ? T("QĐ nhập bổ sung")+(d.mgrNote ? ": "+d.mgrNote : "") : ""]));
   const w5 = XLSX.utils.aoa_to_sheet(orows); w5["!cols"] = [12,18,16,26,14,16,14,14,18,18].map(w => ({wch:w})); XLSX.utils.book_append_sheet(wb, w5, T("Số lượng kiểm"));
   try{ XLSX.writeFile(wb, "Kiem-soat-may-kiem-kim_"+r.month+(S.lang==="ja"?"_JP":"")+".xlsx"); toast(T("Đã xuất file Excel.")); }
   catch(err){ toast(T("Chưa xuất được file. Thử lại sau ít phút.")); }
@@ -2732,7 +2773,14 @@ const LISTS = {
   defects:{doc:"config/defects", title:"Danh sách nguyên nhân lỗi", sub:"Công nhân chọn nguyên nhân từ danh sách này ở báo cáo cuối ngày, hoặc tự điền nếu không có.", empty:"Chưa có nguyên nhân nào. Công nhân sẽ tự điền.", ph:"Nguyên nhân, ví dụ: Lỗi sợi", add:"Thêm nguyên nhân"}
 };
 function listPanel(kind){ const L = LISTS[kind], list = S[kind];
-  if(kind==="products" || kind==="codes"){ const miss = kind==="products" ? DEFAULT_PRODUCTS.filter(x => !list.includes(x)) : [];
+  if(kind==="products"){ const miss = DEFAULT_PRODUCTS.filter(x => !list.includes(x));
+    return '<div class="panel"><div class="row between"><h2>'+T(L.title)+' ('+list.length+')</h2>'+(miss.length ? '<button class="btn sm" data-lseed="1">'+T("Nạp danh sách sản phẩm chuẩn (thiếu {n} mục)",{n:miss.length})+'</button>' : '')+'</div>'
+      +'<div class="sub">'+T(L.sub)+' '+T("Khi app chuyển sang tiếng Nhật, tên ở cột tiếng Nhật được hiện thay cho tên tiếng Việt.")+'</div>'
+      +(list.length ? '<div class="list bil"><div class="bl bhead"><div>'+T("Tên tiếng Việt")+'</div><div>'+T("Tên tiếng Nhật")+'</div><div></div></div>'
+        +list.map(x => '<div class="bl"><div>'+esc(x)+'</div><input type="text" lang="ja" data-ja="'+esc(x)+'" value="'+esc(jaOf("products", x))+'" placeholder="'+T("Tên tiếng Nhật")+'" aria-label="'+T("Tên tiếng Nhật")+': '+esc(x)+'"><button class="btn sm warn" data-pdel="'+esc(x)+'">'+T("Xoá")+'</button></div>').join("")
+        +'</div><div class="row"><button class="btn pri sm" data-jsave="1">'+T("Lưu tên tiếng Nhật")+'</button></div>' : '<div class="notice">'+T("Chưa có tên sản phẩm nào. Khi danh sách trống, công nhân tự gõ tên sản phẩm.")+'</div>')
+      +'<div class="row bnew"><input type="text" id="newp_vi" class="grow" placeholder="'+T("Tên tiếng Việt, ví dụ: Cotton nam")+'"><input type="text" lang="ja" id="newp_ja" class="grow" placeholder="'+T("Tên tiếng Nhật")+'"><button class="btn" data-padd="1">'+T("Thêm sản phẩm")+'</button></div></div>'; }
+  if(kind==="codes"){ const miss = [];
     return '<div class="panel"><div class="row between"><h2>'+T(L.title)+' ('+list.length+')</h2>'+(miss.length ? '<button class="btn sm" data-lseed="1">'+T("Nạp danh sách sản phẩm chuẩn (thiếu {n} mục)",{n:miss.length})+'</button>' : '')+'</div><div class="sub">'+T(L.sub)+'</div>'
       +'<label class="f">'+T(L.label)+'<textarea id="'+L.ta+'" rows="10" class="prodta" spellcheck="false">'+esc(list.join("\n"))+'</textarea></label>'
       +'<div class="row"><button class="btn pri sm" data-lsave="'+kind+'">'+T(L.save)+'</button><span class="sub">'+T("Thêm, sửa hay xoá trực tiếp trong ô rồi bấm Lưu. Dòng trống và mã trùng tự bỏ.")+'</span></div></div>'; }
@@ -2740,6 +2788,9 @@ function listPanel(kind){ const L = LISTS[kind], list = S[kind];
     +(list.length ? '<div class="list">'+list.map(x => '<div class="li"><div>'+esc(x)+'</div><button class="btn sm warn" data-ldel="'+esc(x)+'" data-kind="'+kind+'">'+T("Xoá")+'</button></div>').join("")+'</div>' : '<div class="notice">'+T(L.empty)+'</div>')
     +'<div class="row"><input type="text" id="new_'+kind+'" class="grow" placeholder="'+T(L.ph)+'" aria-label="'+T(L.ph)+'"><button class="btn" data-ladd="'+kind+'">'+T(L.add)+'</button></div></div>';
 }
+/* Lưu danh sách tên sản phẩm kèm cột tiếng Nhật: "ja" là mảng song song với "list" */
+function prodDoc(list, extra){ return {list:list, ja:list.map(x => { const el = document.querySelector('#tab-settings [data-ja="'+CSS.escape(x)+'"]');
+  return String(extra && extra[x]!==undefined ? extra[x] : el ? el.value : jaOf("products", x)).trim(); })}; }
 const productsPanel = () => isMgr() ? listPanel("codes")+listPanel("products") : "";
 function renderSettings(){
   const box = $("#tab-settings"), t = S.cfg.times, bt = baseTimes();
@@ -2749,9 +2800,9 @@ function renderSettings(){
     '<div class="panel"><h2>'+T("Giờ kiểm quy định")+'</h2><div class="sub">'+T("Lần lưu đầu tiên của mỗi phiếu được so với khung giờ này: sau giờ “phải xong trước” là trễ, trước giờ “được kiểm từ” là quá sớm. Phiếu đã lưu giữ nguyên kết quả cũ.")+'</div>'+SLOTS.map(timeRow).join("")+'<div class="row"><button class="btn pri sm" id="saveTimes">'+T("Lưu giờ quy định")+'</button></div></div>'+schedPanel()
    +'<div class="panel"><h2>'+T("Danh sách máy")+'</h2><div class="list">'
      +S.cfg.machines.map(x => { const v = k => has(x[k]) ? x[k] : "", pair = (lab, a, b) => '<div class="rng"><span>'+T(lab)+'</span><input type="text" inputmode="decimal" data-f="'+a+'" value="'+v(a)+'" aria-label="'+T(lab)+'"><span>'+T("đến")+'</span><input type="text" inputmode="decimal" data-f="'+b+'" value="'+v(b)+'" aria-label="'+T("đến")+'"></div>';
-        return '<div class="card" data-mc="'+esc(x.id)+'"><label class="f">'+T("Tên máy")+'<input type="text" data-f="name" value="'+esc(x.name)+'"></label>'
+        return '<div class="card" data-mc="'+esc(x.id)+'"><div class="mrow"><label class="f">'+T("Tên máy tiếng Việt")+'<input type="text" data-f="name" value="'+esc(x.name)+'"></label><label class="f">'+T("Tên máy tiếng Nhật")+'<input type="text" lang="ja" data-f="nameJa" value="'+esc(mJa(x))+'" placeholder="'+T("Tên tiếng Nhật")+'"></label></div>'
           +'<div class="row"><button class="btn pri sm" data-savem="'+esc(x.id)+'">'+T("Lưu máy này")+'</button><button class="btn sm warn" data-del="'+esc(x.id)+'"'+(S.cfg.machines.length===1?" disabled":"")+'>'+T("Xoá máy")+'</button></div></div>'; }).join("")+'</div>'
-   +'<div class="row"><input type="text" id="newMachine" class="grow" placeholder="'+T("Tên máy, ví dụ: Máy kiểm kim 2")+'"><button class="btn" id="addMachine">'+T("Thêm máy")+'</button></div></div>'
+   +'<div class="row"><input type="text" id="newMachine" class="grow" placeholder="'+T("Tên máy, ví dụ: Máy kiểm kim 2")+'"><input type="text" lang="ja" id="newMachineJa" class="grow" placeholder="'+T("Tên tiếng Nhật, ví dụ: 検針機 2号機")+'"><button class="btn" id="addMachine">'+T("Thêm máy")+'</button></div></div>'
    +(S.me.role==="admin" ? sheetPanel()+purgePanel() : '');
 }
 function schedPanel(){ const sp = S.schedUi || (S.schedUi = {date:S.today, mid:"all"}), mname = id => id==="all" ? T("Tất cả máy") : ((S.cfg.machines.find(m => m.id===id) || {}).name || id);
@@ -2974,8 +3025,16 @@ $("#tab-settings").addEventListener("click", async e => {
   if(b.dataset.lsave){ if(S.busy) return; const kind = b.dataset.lsave==="codes" ? "codes" : "products", seen = new Set(), list = ($("#"+LISTS[kind].ta).value||"").split(/\r?\n/).map(x => x.trim().replace(/[,;]/g," ").replace(/\s+/g," ")).filter(x => x && !seen.has(x.toLowerCase()) && seen.add(x.toLowerCase()));
     S.busy = true; try{ await S.db.doc(LISTS[kind].doc).set({list:list}); S[kind] = list; if(document.activeElement) document.activeElement.blur(); toast(T(kind==="codes" ? "Đã lưu danh sách mã hàng ({n} mã)." : "Đã lưu danh sách tên sản phẩm ({n} mục).",{n:list.length})); }catch(err){ toast(T("Chưa lưu được cài đặt.")); }
     S.busy = false; renderSettings(); return; }
+  if(b.dataset.padd || b.dataset.pdel || b.dataset.jsave){ let list = S.products.slice(), extra = {};
+    if(b.dataset.padd){ const name = $("#newp_vi").value.trim().replace(/[,;]/g," ").replace(/\s+/g," "); if(!name) return toast(T("Hãy nhập tên trước.")); if(list.some(x => x.toLowerCase()===name.toLowerCase())) return toast(T("Tên này đã có trong danh sách.")); list.push(name); extra[name] = $("#newp_ja").value.trim().replace(/[,;]/g," "); }
+    else if(b.dataset.pdel){ if(b.dataset.sure!=="1"){ b.dataset.sure="1"; b.textContent=T("Bấm lần nữa để xoá"); return; } list = list.filter(x => x!==b.dataset.pdel); }
+    const doc = prodDoc(list, extra);
+    if(b.dataset.jsave && doc.ja.every((v, i) => v===jaOf("products", list[i]))) return toast(T("Không có gì thay đổi."));
+    S.busy = true;
+    try{ await S.db.doc(LISTS.products.doc).set(doc); S.products = list; if(document.activeElement) document.activeElement.blur(); toast(T("Đã lưu cài đặt.")); }catch(err){ toast(T("Chưa lưu được cài đặt.")); }
+    S.busy = false; renderSettings(); return; }
   if(b.dataset.lseed){ if(S.busy) return; const list = S.products.concat(DEFAULT_PRODUCTS.filter(x => !S.products.includes(x))); S.busy = true;
-    try{ await S.db.doc(LISTS.products.doc).set({list:list}); toast(T("Đã nạp danh sách sản phẩm chuẩn ({n} mục).",{n:list.length})); }catch(err){ toast(T("Chưa lưu được cài đặt.")); }
+    try{ await S.db.doc(LISTS.products.doc).set(prodDoc(list, {})); toast(T("Đã nạp danh sách sản phẩm chuẩn ({n} mục).",{n:list.length})); }catch(err){ toast(T("Chưa lưu được cài đặt.")); }
     S.busy = false; return; }
   if(b.dataset.ladd || b.dataset.ldel){ const kind = b.dataset.ladd || b.dataset.kind; let list = S[kind].slice();
     if(b.dataset.ladd){ const name = $("#new_"+kind).value.trim().replace(/[,;]/g," "); if(!name) return toast(T("Hãy nhập tên trước.")); if(list.includes(name)) return toast(T("Tên này đã có trong danh sách.")); list.push(name); }
@@ -2985,11 +3044,11 @@ $("#tab-settings").addEventListener("click", async e => {
     S.busy = false; return; }
   if(!isMgr()) return;
   const cfg = {autoAdded:true, logoAdded:true, machines:S.cfg.machines.map(x => Object.assign({}, x)), times2:Object.fromEntries(SLOTS.map(k => [k, Object.assign({}, S.cfg.times[k])])), steps:{}};
-  if(b.id==="addMachine"){ const name = $("#newMachine").value.trim(); if(!name) return toast(T("Hãy nhập tên máy trước.")); cfg.machines.push({id:"m"+Date.now().toString(36), name:name}); }
+  if(b.id==="addMachine"){ const name = $("#newMachine").value.trim(); if(!name) return toast(T("Hãy nhập tên máy trước.")); cfg.machines.push({id:"m"+Date.now().toString(36), name:name, nameJa:($("#newMachineJa") ? $("#newMachineJa").value.trim() : "")}); }
   else if(b.dataset.del){ if(b.dataset.sure!=="1"){ b.dataset.sure="1"; b.textContent=T("Bấm lần nữa để xoá"); return; } cfg.machines = cfg.machines.filter(x => x.id!==b.dataset.del); }
   else if(b.dataset.savem){ const card = b.closest("[data-mc]"), g = k => card.querySelector('[data-f="'+k+'"]'), m = cfg.machines.find(x => x.id===b.dataset.savem);
     const name = g("name").value.trim(); if(!name) return toast(T("Hãy nhập tên máy trước."));
-    m.name = name;
+    m.name = name; m.nameJa = g("nameJa") ? g("nameJa").value.trim() : (m.nameJa||"");
     if([["tMin","tMax"],["t2Min","t2Max"],["sMin","sMax"]].some(p => has(m[p[0]]) && has(m[p[1]]) && m[p[0]]>m[p[1]])) return toast(T("Khoảng chuẩn không hợp lệ: số “từ” phải nhỏ hơn số “đến”.")); }
   else if(b.id==="saveTimes"){ for(const s of SLOTS){ const f = $("#from"+s).value, d = $("#due"+s).value; if(!f || !d || toMin(f)>=toMin(d)) return toast(T("Ca {s}: giờ bắt đầu phải trước giờ hạn.",{s:shiftL(s)})); cfg.times2[s] = {from:f, due:d}; }
   }
@@ -3021,7 +3080,7 @@ async function start(){
              times: Object.fromEntries(SLOTS.map(k => [k, Object.assign({}, DEFAULT_TIMES[k], (d.times2 || d.times) && (d.times2 || d.times)[k])])), steps:Object.assign({}, d.steps)};
     render(); }, fail);
   /* Theo dõi trực tiếp tháng này và tháng trước (để phiếu cuối tháng vẫn hiện ở tab Duyệt). */
-  ["products","codes","defects"].forEach(kind => db.doc(LISTS[kind].doc).onSnapshot(s => { const d = s.exists ? s.data() : {}; S[kind] = Array.isArray(d.list) ? d.list : []; if(kind==="products" && !s.exists && !S.prodSeeded && S.canWrite!==false){ S.prodSeeded = true; S.products = DEFAULT_PRODUCTS.slice(); db.doc(LISTS.products.doc).set({list:DEFAULT_PRODUCTS.slice()}).catch(() => {}); } render(); }, () => {}));
+  ["products","codes","defects"].forEach(kind => db.doc(LISTS[kind].doc).onSnapshot(s => { const d = s.exists ? s.data() : {}; S[kind] = Array.isArray(d.list) ? d.list : []; if(kind==="products"){ const ja = Array.isArray(d.ja) ? d.ja : [], m = {}; S.products.forEach((x, i) => { if(ja[i]) m[x] = ja[i]; }); S.listJa.products = m; } if(kind==="products" && !s.exists && !S.prodSeeded && S.canWrite!==false){ S.prodSeeded = true; S.products = DEFAULT_PRODUCTS.slice(); db.doc(LISTS.products.doc).set({list:DEFAULT_PRODUCTS.slice()}).catch(() => {}); } render(); }, () => {}));
   const cur = S.today.slice(0,7), live = {checks:{}, approvals:{}, fappr:{}, steps:{}, sched:{}, incidents:{}, kout:{}};
   [cur, prevMonth(cur)].forEach(ym => { ["checks","approvals","fappr","steps","sched","incidents","kout"].forEach(c => {
     db.collection(c).where("month","==",ym).onSnapshot(q => { live[c][ym] = q.docs;
